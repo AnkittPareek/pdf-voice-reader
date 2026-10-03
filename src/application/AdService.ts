@@ -18,11 +18,23 @@ import { usePlaybackStore } from '../state/playbackStore';
 const AD_FREE_UNTIL_KEY = '@pdf_voice_reader_ad_free_until';
 const LAST_INTERSTITIAL_KEY = '@pdf_voice_reader_last_interstitial';
 
-// Google AdMob standard test unit IDs for Android
+const isDev = typeof __DEV__ !== 'undefined' ? Boolean(__DEV__) : process.env.NODE_ENV !== 'production';
+
+// Google AdMob Configuration
 export const ADMOB_CONFIG = {
-  BANNER_ID: 'ca-app-pub-3940256099942544/6300978111',
-  INTERSTITIAL_ID: 'ca-app-pub-3940256099942544/1033173712',
-  REWARDED_ID: 'ca-app-pub-3940256099942544/5224354917',
+  APP_ID: 'ca-app-pub-1897406819003628~4977435362',
+  BANNER_ID: isDev
+    ? 'ca-app-pub-3940256099942544/6300978111'
+    : 'ca-app-pub-1897406819003628/1939285049',
+  INTERSTITIAL_ID: isDev
+    ? 'ca-app-pub-3940256099942544/1033173712'
+    : 'ca-app-pub-1897406819003628/9519315607',
+  REWARDED_ID: isDev
+    ? 'ca-app-pub-3940256099942544/5224354917'
+    : 'ca-app-pub-1897406819003628/6893152261',
+  PRODUCTION_BANNER_ID: 'ca-app-pub-1897406819003628/1939285049',
+  PRODUCTION_INTERSTITIAL_ID: 'ca-app-pub-1897406819003628/9519315607',
+  PRODUCTION_REWARDED_ID: 'ca-app-pub-1897406819003628/6893152261',
   MIN_INTERSTITIAL_COOLDOWN_MS: 8 * 60 * 1000, // 8 minutes minimum between interstitials
   MIN_READING_DURATION_FOR_AD_MS: 45 * 1000, // User must read for at least 45 seconds
 };

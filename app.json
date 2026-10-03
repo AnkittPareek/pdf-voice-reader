@@ -31,6 +31,9 @@
       "expo-router",
       "expo-sqlite"
     ],
-    "newArchEnabled": true
+    "newArchEnabled": true,
+    "react-native-google-mobile-ads": {
+      "android_app_id": "ca-app-pub-1897406819003628~4977435362"
+    }
   }
 }

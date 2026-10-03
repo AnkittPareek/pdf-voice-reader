@@ -76,7 +76,7 @@ export function InterstitialAdModal({ visible, onClose }: InterstitialAdModalPro
         {/* Footer info */}
         <View style={styles.footer}>
           <Text style={[styles.footerText, { color: theme.colors.textSecondary }]}>
-            Google AdMob Interstitial · Test Unit ID: 1033173712
+            Sponsored Advertisement
           </Text>
         </View>
       </View>

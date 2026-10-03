@@ -57,7 +57,7 @@ export function RewardedAdModal({ visible, onClose, onRewardGranted }: RewardedA
                 Playing Sponsor Video...
               </Text>
               <Text style={[styles.watchingDesc, { color: theme.colors.textSecondary }]}>
-                AdMob Rewarded Unit: ca-app-pub-3940256099942544/5224354917
+                Reward grants 24 hours of ad-free reading
               </Text>
             </View>
           ) : rewardClaimed ? (

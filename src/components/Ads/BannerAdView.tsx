@@ -47,7 +47,7 @@ export function BannerAdView({ onPressRemoveAds }: BannerAdViewProps) {
         </View>
 
         <Text style={[styles.sponsorTitle, { color: theme.colors.textPrimary }]} numberOfLines={1}>
-          Audible Books & Podcasts · AdMob Test
+          Sponsored Partner
         </Text>
 
         {onPressRemoveAds && (
