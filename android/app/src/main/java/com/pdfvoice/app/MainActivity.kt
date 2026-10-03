@@ -1,4 +1,4 @@
-package com.pdfvoice.reader
+package com.pdfvoice.app
 
 import android.os.Build
 import android.os.Bundle

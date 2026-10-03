@@ -89,9 +89,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.pdfvoice.reader'
+    namespace 'com.pdfvoice.app'
     defaultConfig {
-        applicationId 'com.pdfvoice.reader'
+        applicationId 'com.pdfvoice.app'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
@@ -112,6 +112,11 @@ android {
                 storePassword(findProperty('MYAPP_UPLOAD_STORE_PASSWORD') ?: System.getenv('MYAPP_UPLOAD_STORE_PASSWORD'))
                 keyAlias(findProperty('MYAPP_UPLOAD_KEY_ALIAS') ?: System.getenv('MYAPP_UPLOAD_KEY_ALIAS'))
                 keyPassword(findProperty('MYAPP_UPLOAD_KEY_PASSWORD') ?: System.getenv('MYAPP_UPLOAD_KEY_PASSWORD'))
+            } else if (file('release.keystore').exists()) {
+                storeFile file('release.keystore')
+                storePassword(findProperty('PDFVOICE_KEYSTORE_PASSWORD') ?: 'PdfVoice2026UploadKey!')
+                keyAlias(findProperty('PDFVOICE_KEY_ALIAS') ?: 'pdfvoice-upload-key')
+                keyPassword(findProperty('PDFVOICE_KEY_PASSWORD') ?: 'PdfVoice2026UploadKey!')
             } else {
                 // Fallback to debug keystore for local release testing until upload keystore is configured
                 storeFile file('debug.keystore')

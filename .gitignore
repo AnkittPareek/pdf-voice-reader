@@ -23,6 +23,9 @@ android/local.properties
 local.properties
 
 # Native keystores & keys (prevent tracking production release keys)
+release.keystore
+*.release.keystore
+signing.properties
 *.jks
 *.p8
 *.p12
