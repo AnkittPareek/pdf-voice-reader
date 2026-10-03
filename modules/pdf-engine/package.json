@@ -1,0 +1,11 @@
+{
+  "name": "pdf-engine",
+  "version": "1.0.0",
+  "description": "Native Android PDF rendering and text extraction module for PDF Voice Reader",
+  "main": "index.ts",
+  "types": "index.ts",
+  "scripts": {},
+  "keywords": ["expo", "pdf", "android"],
+  "author": "",
+  "license": "MIT"
+}

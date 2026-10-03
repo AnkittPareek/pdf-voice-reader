@@ -1,0 +1,7 @@
+{
+  "name": "speech-engine",
+  "platforms": ["android"],
+  "android": {
+    "modules": ["expo.modules.speechengine.SpeechEngineModule"]
+  }
+}

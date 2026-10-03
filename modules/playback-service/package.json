@@ -1,0 +1,11 @@
+{
+  "name": "playback-service",
+  "version": "1.0.0",
+  "description": "Native Android background media playback foreground service and notification for PDF Voice Reader",
+  "main": "index.ts",
+  "types": "index.ts",
+  "scripts": {},
+  "keywords": ["expo", "foreground-service", "notification", "android"],
+  "author": "",
+  "license": "MIT"
+}
