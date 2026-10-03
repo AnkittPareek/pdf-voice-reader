@@ -1,0 +1,279 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1080, height=2400, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+    }
+    body {
+      width: 1080px;
+      height: 2400px;
+      background-color: #F7F7F5;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #171717;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .status-bar {
+      height: 108px;
+      padding: 0 48px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 38px;
+      font-weight: 600;
+      color: #171717;
+      letter-spacing: -0.5px;
+    }
+    .status-icons {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .status-icons svg {
+      fill: #171717;
+    }
+    .nav-bar-gesture {
+      height: 96px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: transparent;
+    }
+    .gesture-pill {
+      width: 320px;
+      height: 12px;
+      background: #171717;
+      border-radius: 6px;
+      opacity: 0.25;
+    }
+  </style>
+
+  <style>
+    .screen-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 0 48px;
+    }
+    .header {
+      height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .btn-back {
+      font-size: 64px;
+      color: #171717;
+      cursor: pointer;
+    }
+    .header-title {
+      font-size: 44px;
+      font-weight: 800;
+      color: #171717;
+    }
+    .section-label {
+      font-size: 30px;
+      font-weight: 700;
+      color: #6B6B6B;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 28px 0 16px 0;
+    }
+    .card {
+      background: #FFFFFF;
+      border: 2px solid #E5E7EB;
+      border-radius: 32px;
+      padding: 12px 36px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.03);
+    }
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 36px 0;
+    }
+    .row-title {
+      font-size: 38px;
+      font-weight: 600;
+      color: #171717;
+    }
+    .row-value {
+      font-size: 36px;
+      font-weight: 600;
+      color: #4F46E5;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .chevron {
+      font-size: 40px;
+      color: #9CA3AF;
+    }
+    .divider {
+      height: 2px;
+      background: #E5E7EB;
+      width: 100%;
+    }
+    .speed-header {
+      padding-top: 32px;
+      font-size: 38px;
+      font-weight: 600;
+      color: #171717;
+      margin-bottom: 24px;
+    }
+    .speed-scroll {
+      display: flex;
+      gap: 16px;
+      padding-bottom: 32px;
+    }
+    .speed-btn {
+      flex: 1;
+      height: 88px;
+      border-radius: 22px;
+      background: #F7F7F5;
+      border: 2px solid #E5E7EB;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 34px;
+      font-weight: 600;
+      color: #6B6B6B;
+    }
+    .speed-btn.active {
+      background: #4F46E5;
+      border-color: #4F46E5;
+      color: #FFFFFF;
+      font-weight: 700;
+      box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
+    }
+    .guarantee-box {
+      background: #EEF2FF;
+      border: 2px solid #C7D2FE;
+      border-radius: 32px;
+      padding: 40px;
+      margin-top: 40px;
+    }
+    .guarantee-title {
+      font-size: 36px;
+      font-weight: 800;
+      color: #3730A3;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .guarantee-desc {
+      font-size: 32px;
+      color: #4338CA;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  
+  <div class="status-bar">
+    <span>09:41</span>
+    <div class="status-icons">
+      <!-- Signal -->
+      <svg width="42" height="32" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L12 22l7.03-4.39C20.26 16.07 21 14.12 21 12c0-4.97-4.03-9-9-9zm0 13c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"/></svg>
+      <!-- Wifi -->
+      <svg width="42" height="32" viewBox="0 0 24 24"><path d="M12 4C7.31 4 3.07 5.9 0 8.98L12 21 24 8.98C20.93 5.9 16.69 4 12 4zm0 3.5c3.55 0 6.78 1.41 9.17 3.7L12 19.38 2.83 11.2C5.22 8.91 8.45 7.5 12 7.5z"/></svg>
+      <!-- Battery -->
+      <svg width="48" height="32" viewBox="0 0 24 24"><path d="M16 4h-1V2h-6v2H8C6.9 4 6 4.9 6 6v14c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H8V6h8v14z"/></svg>
+    </div>
+  </div>
+
+  <div class="screen-container">
+    <div class="header">
+      <div class="btn-back">‹</div>
+      <div class="header-title">Settings</div>
+      <div style="width:64px;"></div>
+    </div>
+
+    <!-- Speech Settings -->
+    <div class="section-label">SPEECH & TTS</div>
+    <div class="card">
+      <div class="row">
+        <div class="row-title">Active Voice</div>
+        <div class="row-value">
+          <span>English (US) · Natural High-Q</span>
+          <span class="chevron">›</span>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="speed-header">Default Reading Speed</div>
+      <div class="speed-scroll">
+        <div class="speed-btn">0.75x</div>
+        <div class="speed-btn">1.0x</div>
+        <div class="speed-btn active">1.25x</div>
+        <div class="speed-btn">1.5x</div>
+        <div class="speed-btn">2.0x</div>
+      </div>
+    </div>
+
+    <!-- Appearance -->
+    <div class="section-label">APPEARANCE</div>
+    <div class="card">
+      <div class="row">
+        <div class="row-title">Theme</div>
+        <div class="row-value" style="color: #6B6B6B;">
+          <span>System Automatic</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Privacy & Offline Guarantee -->
+    <div class="section-label">PRIVACY & STORAGE</div>
+    <div class="card">
+      <div class="row">
+        <div class="row-title">Data Storage</div>
+        <div class="row-value" style="color: #10B981;">
+          <span>100% On-Device</span>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="row">
+        <div class="row-title">Cloud Sync</div>
+        <div class="row-value" style="color: #6B6B6B;">
+          <span>Disabled (Zero Uploads)</span>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="row">
+        <div class="row-title">Advertising & Trackers</div>
+        <div class="row-value" style="color: #10B981;">
+          <span>None (Zero Tracking)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="guarantee-box">
+      <div class="guarantee-title">
+        <span>🛡️ Offline-First Reading</span>
+      </div>
+      <div class="guarantee-desc">
+        PDF Voice runs native on-device speech engines and local rendering. Your sensitive documents, books, and study material never leave your smartphone.
+      </div>
+    </div>
+  </div>
+  
+  <div class="nav-bar-gesture">
+    <div class="gesture-pill"></div>
+  </div>
+
+</body>
+</html>

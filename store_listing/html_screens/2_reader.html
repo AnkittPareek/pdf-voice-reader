@@ -1,0 +1,366 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1080, height=2400, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+    }
+    body {
+      width: 1080px;
+      height: 2400px;
+      background-color: #F7F7F5;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #171717;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .status-bar {
+      height: 108px;
+      padding: 0 48px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 38px;
+      font-weight: 600;
+      color: #171717;
+      letter-spacing: -0.5px;
+    }
+    .status-icons {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .status-icons svg {
+      fill: #171717;
+    }
+    .nav-bar-gesture {
+      height: 96px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: transparent;
+    }
+    .gesture-pill {
+      width: 320px;
+      height: 12px;
+      background: #171717;
+      border-radius: 6px;
+      opacity: 0.25;
+    }
+  </style>
+
+  <style>
+    .screen-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 0 48px;
+    }
+    .header {
+      height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .btn-back {
+      font-size: 64px;
+      color: #171717;
+      cursor: pointer;
+    }
+    .header-center {
+      text-align: center;
+    }
+    .doc-name {
+      font-size: 40px;
+      font-weight: 700;
+      color: #171717;
+      max-width: 620px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .page-indicator {
+      font-size: 30px;
+      color: #6B6B6B;
+      font-weight: 500;
+      margin-top: 4px;
+    }
+    .font-controls {
+      display: flex;
+      gap: 12px;
+    }
+    .btn-font {
+      width: 76px;
+      height: 76px;
+      border-radius: 20px;
+      background: #FFFFFF;
+      border: 2px solid #E5E7EB;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      font-weight: 700;
+      color: #171717;
+    }
+    .mode-bar {
+      margin: 16px 0 32px 0;
+      display: flex;
+      justify-content: center;
+    }
+    .mode-segment {
+      width: 100%;
+      height: 94px;
+      background: #FFFFFF;
+      border: 2px solid #E5E7EB;
+      border-radius: 26px;
+      display: flex;
+      padding: 8px;
+      gap: 8px;
+    }
+    .mode-tab {
+      flex: 1;
+      height: 100%;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 34px;
+      font-weight: 600;
+      color: #6B6B6B;
+    }
+    .mode-tab.active {
+      background: #4F46E5;
+      color: #FFFFFF;
+      font-weight: 700;
+      box-shadow: 0 4px 16px rgba(79, 70, 229, 0.25);
+    }
+    .reader-scroll {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+      padding-bottom: 20px;
+    }
+    .chunk-card {
+      padding: 36px 36px;
+      border-radius: 28px;
+      border: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .chunk-card.active {
+      background: #EEF2FF;
+      border-color: #4F46E5;
+      box-shadow: 0 8px 24px rgba(79, 70, 229, 0.08);
+    }
+    .active-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .speaking-pill {
+      background: #4F46E5;
+      color: #FFFFFF;
+      font-size: 24px;
+      font-weight: 800;
+      padding: 8px 22px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+    }
+    .sentence-index {
+      font-size: 28px;
+      font-weight: 600;
+      color: #4F46E5;
+    }
+    .reading-text {
+      font-family: 'Newsreader', Georgia, serif;
+      font-size: 46px;
+      line-height: 1.65;
+      color: #1F2937;
+    }
+    .word-highlight {
+      background: #4F46E5;
+      color: #FFFFFF;
+      padding: 2px 10px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    }
+    .inactive-chunk {
+      opacity: 0.78;
+    }
+    .floating-audio-bar {
+      background: #181A1F;
+      border-radius: 40px;
+      padding: 28px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+      margin-bottom: 20px;
+    }
+    .fab-left {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    .fab-play {
+      width: 100px;
+      height: 100px;
+      border-radius: 50px;
+      background: #4F46E5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 24px rgba(79, 70, 229, 0.4);
+    }
+    .fab-play svg {
+      width: 44px;
+      height: 44px;
+      fill: #FFFFFF;
+    }
+    .fab-info {
+      display: flex;
+      flex-direction: column;
+    }
+    .fab-status {
+      font-size: 32px;
+      font-weight: 700;
+      color: #FFFFFF;
+    }
+    .fab-speed {
+      font-size: 26px;
+      color: #9CA3AF;
+      margin-top: 4px;
+    }
+    .fab-actions {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .fab-btn {
+      width: 80px;
+      height: 80px;
+      border-radius: 40px;
+      background: #2D3139;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .fab-btn svg {
+      width: 36px;
+      height: 36px;
+      fill: #FFFFFF;
+    }
+  </style>
+</head>
+<body>
+  
+  <div class="status-bar">
+    <span>09:41</span>
+    <div class="status-icons">
+      <!-- Signal -->
+      <svg width="42" height="32" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L12 22l7.03-4.39C20.26 16.07 21 14.12 21 12c0-4.97-4.03-9-9-9zm0 13c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"/></svg>
+      <!-- Wifi -->
+      <svg width="42" height="32" viewBox="0 0 24 24"><path d="M12 4C7.31 4 3.07 5.9 0 8.98L12 21 24 8.98C20.93 5.9 16.69 4 12 4zm0 3.5c3.55 0 6.78 1.41 9.17 3.7L12 19.38 2.83 11.2C5.22 8.91 8.45 7.5 12 7.5z"/></svg>
+      <!-- Battery -->
+      <svg width="48" height="32" viewBox="0 0 24 24"><path d="M16 4h-1V2h-6v2H8C6.9 4 6 4.9 6 6v14c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H8V6h8v14z"/></svg>
+    </div>
+  </div>
+
+  <div class="screen-container">
+    <div class="header">
+      <div class="btn-back">‹</div>
+      <div class="header-center">
+        <div class="doc-name">Deep Work — Cal Newport.pdf</div>
+        <div class="page-indicator">Page 18 of 296</div>
+      </div>
+      <div class="font-controls">
+        <div class="btn-font">A-</div>
+        <div class="btn-font">A+</div>
+      </div>
+    </div>
+
+    <!-- ReadEra Mode Switcher -->
+    <div class="mode-bar">
+      <div class="mode-segment">
+        <div class="mode-tab active">📖 Ebook Text</div>
+        <div class="mode-tab">📄 PDF Page</div>
+      </div>
+    </div>
+
+    <!-- Text Flow with Active Sentence & Word Highlight -->
+    <div class="reader-scroll">
+      <div class="chunk-card inactive-chunk">
+        <div class="reading-text">
+          Deep work is the ability to focus without distraction on a cognitively demanding task. It is a superpower in our increasingly competitive twenty-first-century economy.
+        </div>
+      </div>
+
+      <div class="chunk-card active">
+        <div class="active-header">
+          <div class="speaking-pill">● NOW READING</div>
+          <div class="sentence-index">Sentence 2 of 14</div>
+        </div>
+        <div class="reading-text">
+          To produce at your peak level you need to work for extended periods with full <span class="word-highlight">concentration</span> on a single task free from all distraction.
+        </div>
+      </div>
+
+      <div class="chunk-card inactive-chunk">
+        <div class="reading-text">
+          The reason most knowledge workers struggle with deep work is not that they lack willpower, but rather that our modern workplace culture actively incentivizes fragmentation and quick responsiveness.
+        </div>
+      </div>
+
+      <div class="chunk-card inactive-chunk">
+        <div class="reading-text">
+          If you cultivate this skill, you will thrive and produce creative breakthroughs that shallow multitaskers cannot match.
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating ReadEra Audio Controller -->
+    <div class="floating-audio-bar">
+      <div class="fab-left">
+        <div class="fab-play">
+          <!-- Pause -->
+          <svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+        </div>
+        <div class="fab-info">
+          <div class="fab-status">Reading aloud...</div>
+          <div class="fab-speed">Speed: 1.25x · Natural US Voice</div>
+        </div>
+      </div>
+      <div class="fab-actions">
+        <div class="fab-btn">
+          <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+        </div>
+        <div class="fab-btn">
+          <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+        </div>
+        <div class="fab-btn" style="background:#4F46E5">
+          <svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="nav-bar-gesture">
+    <div class="gesture-pill"></div>
+  </div>
+
+</body>
+</html>

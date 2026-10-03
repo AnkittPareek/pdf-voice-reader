@@ -1,0 +1,351 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1080, height=2400, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+    }
+    body {
+      width: 1080px;
+      height: 2400px;
+      background-color: #F7F7F5;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #171717;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .status-bar {
+      height: 108px;
+      padding: 0 48px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 38px;
+      font-weight: 600;
+      color: #171717;
+      letter-spacing: -0.5px;
+    }
+    .status-icons {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .status-icons svg {
+      fill: #171717;
+    }
+    .nav-bar-gesture {
+      height: 96px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: transparent;
+    }
+    .gesture-pill {
+      width: 320px;
+      height: 12px;
+      background: #171717;
+      border-radius: 6px;
+      opacity: 0.25;
+    }
+  </style>
+
+  <style>
+    .screen-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 0 48px;
+    }
+    .header {
+      height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .brand-title {
+      font-size: 58px;
+      font-weight: 800;
+      color: #171717;
+      letter-spacing: -0.5px;
+    }
+    .btn-settings {
+      width: 96px;
+      height: 96px;
+      border-radius: 48px;
+      background: #FFFFFF;
+      border: 2px solid #E5E7EB;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 44px;
+      color: #4B5563;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+    .section-label {
+      font-size: 30px;
+      font-weight: 700;
+      color: #6B6B6B;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 24px;
+    }
+    .featured-card {
+      background: #FFFFFF;
+      border: 2px solid #E5E7EB;
+      border-radius: 36px;
+      padding: 44px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.04);
+      margin-bottom: 48px;
+    }
+    .featured-top {
+      display: flex;
+      gap: 32px;
+      margin-bottom: 32px;
+    }
+    .book-cover {
+      width: 140px;
+      height: 190px;
+      background: linear-gradient(135deg, #4F46E5, #3730A3);
+      border-radius: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 12px 24px rgba(79, 70, 229, 0.25);
+      color: #FFFFFF;
+      font-weight: 800;
+      font-size: 32px;
+      letter-spacing: 1px;
+    }
+    .book-meta {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .book-title {
+      font-size: 44px;
+      font-weight: 800;
+      color: #171717;
+      line-height: 1.25;
+      margin-bottom: 12px;
+    }
+    .book-author {
+      font-size: 34px;
+      color: #6B6B6B;
+      font-weight: 500;
+      margin-bottom: 16px;
+    }
+    .book-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 26px;
+      font-weight: 700;
+      color: #4F46E5;
+      background: #EEF2FF;
+      padding: 6px 18px;
+      border-radius: 14px;
+      align-self: flex-start;
+    }
+    .featured-progress-bar {
+      width: 100%;
+      height: 12px;
+      background: #E5E7EB;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .featured-progress-fill {
+      width: 44%;
+      height: 100%;
+      background: #4F46E5;
+      border-radius: 6px;
+    }
+    .featured-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+    }
+    .progress-text {
+      font-size: 32px;
+      font-weight: 600;
+      color: #6B6B6B;
+    }
+    .btn-resume {
+      background: #4F46E5;
+      color: #FFFFFF;
+      font-size: 32px;
+      font-weight: 700;
+      padding: 18px 36px;
+      border-radius: 22px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
+    }
+    .btn-resume svg {
+      width: 28px;
+      height: 28px;
+      fill: #FFFFFF;
+    }
+    .recents-grid {
+      display: flex;
+      gap: 28px;
+      margin-bottom: 48px;
+    }
+    .recent-item {
+      flex: 1;
+      background: #FFFFFF;
+      border: 2px solid #E5E7EB;
+      border-radius: 30px;
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.03);
+    }
+    .recent-cover {
+      width: 100%;
+      height: 160px;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 30px;
+      color: #FFFFFF;
+      margin-bottom: 24px;
+    }
+    .recent-title {
+      font-size: 34px;
+      font-weight: 700;
+      color: #171717;
+      line-height: 1.3;
+      margin-bottom: 8px;
+    }
+    .recent-meta {
+      font-size: 28px;
+      color: #6B6B6B;
+    }
+    .btn-add-pdf {
+      width: 100%;
+      height: 120px;
+      border: 3px dashed #CBD5E1;
+      background: #FFFFFF;
+      border-radius: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      font-size: 38px;
+      font-weight: 700;
+      color: #4F46E5;
+      margin-bottom: 36px;
+      cursor: pointer;
+    }
+    .privacy-notice {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      font-size: 30px;
+      color: #6B6B6B;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  
+  <div class="status-bar">
+    <span>09:41</span>
+    <div class="status-icons">
+      <!-- Signal -->
+      <svg width="42" height="32" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L12 22l7.03-4.39C20.26 16.07 21 14.12 21 12c0-4.97-4.03-9-9-9zm0 13c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"/></svg>
+      <!-- Wifi -->
+      <svg width="42" height="32" viewBox="0 0 24 24"><path d="M12 4C7.31 4 3.07 5.9 0 8.98L12 21 24 8.98C20.93 5.9 16.69 4 12 4zm0 3.5c3.55 0 6.78 1.41 9.17 3.7L12 19.38 2.83 11.2C5.22 8.91 8.45 7.5 12 7.5z"/></svg>
+      <!-- Battery -->
+      <svg width="48" height="32" viewBox="0 0 24 24"><path d="M16 4h-1V2h-6v2H8C6.9 4 6 4.9 6 6v14c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H8V6h8v14z"/></svg>
+    </div>
+  </div>
+
+  <div class="screen-container">
+    <div class="header">
+      <div class="brand-title">PDF Voice</div>
+      <div class="btn-settings">⚙</div>
+    </div>
+
+    <!-- Continue Listening -->
+    <div class="section-label">CONTINUE LISTENING</div>
+    <div class="featured-card">
+      <div class="featured-top">
+        <div class="book-cover">
+          <div>HABITS</div>
+        </div>
+        <div class="book-meta">
+          <div class="book-title">Atomic Habits</div>
+          <div class="book-author">James Clear · 320 pages</div>
+          <div class="book-badge">⚡ Resumes at Sentence 42</div>
+        </div>
+      </div>
+      <div class="featured-progress-bar">
+        <div class="featured-progress-fill"></div>
+      </div>
+      <div class="featured-footer">
+        <div class="progress-text">Page 42 of 320 (44%)</div>
+        <div class="btn-resume">
+          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          Listen Now
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Documents -->
+    <div class="section-label">RECENT DOCUMENTS</div>
+    <div class="recents-grid">
+      <div class="recent-item">
+        <div class="recent-cover" style="background: linear-gradient(135deg, #059669, #047857);">
+          <div>FOCUS</div>
+        </div>
+        <div class="recent-title">Deep Work</div>
+        <div class="recent-meta">Cal Newport · 18%</div>
+      </div>
+      <div class="recent-item">
+        <div class="recent-cover" style="background: linear-gradient(135deg, #D97706, #B45309);">
+          <div>HISTORY</div>
+        </div>
+        <div class="recent-title">Sapiens</div>
+        <div class="recent-meta">Yuval Harari · 65%</div>
+      </div>
+    </div>
+
+    <!-- Add PDF CTA -->
+    <div class="btn-add-pdf">
+      <span style="font-size: 52px; font-weight: 400; line-height: 0;">+</span>
+      <span>Add PDF or Document</span>
+    </div>
+
+    <div class="privacy-notice">
+      <span>🔒 100% On-Device · Your documents never leave this phone</span>
+    </div>
+  </div>
+  
+  <div class="nav-bar-gesture">
+    <div class="gesture-pill"></div>
+  </div>
+
+</body>
+</html>
