@@ -124,16 +124,22 @@ export default function LibraryScreen() {
     >
       {/* Header */}
       <View style={styles.header}>
-        <Text style={[theme.typography.display, { color: theme.colors.textPrimary }]}>
+        <Text style={[theme.typography.display, { color: theme.colors.textPrimary, fontWeight: '800' }]}>
           PDF Voice
         </Text>
         <TouchableOpacity
           onPress={handleSettingsPress}
           accessibilityLabel="Settings"
           accessibilityRole="button"
-          style={styles.settingsButton}
+          style={[
+            styles.settingsButton,
+            {
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.divider,
+            },
+          ]}
         >
-          <Text style={[styles.settingsIcon, { color: theme.colors.textSecondary }]}>⚙</Text>
+          <Text style={[styles.settingsIcon, { color: theme.colors.textPrimary }]}>⚙</Text>
         </TouchableOpacity>
       </View>
 
@@ -148,7 +154,7 @@ export default function LibraryScreen() {
             <Text
               style={[
                 theme.typography.title,
-                { color: theme.colors.textPrimary, textAlign: 'center' },
+                { color: theme.colors.textPrimary, textAlign: 'center', fontWeight: '800' },
               ]}
             >
               Listen to your PDFs{'\n'}without staring at the screen.
@@ -164,7 +170,7 @@ export default function LibraryScreen() {
               <Text
                 style={[
                   theme.typography.body,
-                  { color: '#FFFFFF', fontWeight: '600' },
+                  { color: '#FFFFFF', fontWeight: '700' },
                 ]}
               >
                 + Add PDF
@@ -178,6 +184,7 @@ export default function LibraryScreen() {
                   color: theme.colors.textSecondary,
                   textAlign: 'center',
                   marginTop: 16,
+                  fontWeight: '500',
                 },
               ]}
             >
@@ -208,17 +215,11 @@ export default function LibraryScreen() {
               <View style={styles.section}>
                 <Text
                   style={[
-                    theme.typography.secondary,
-                    {
-                      color: theme.colors.textSecondary,
-                      marginBottom: 12,
-                      fontWeight: '600',
-                      textTransform: 'uppercase',
-                      letterSpacing: 0.5,
-                    },
+                    styles.sectionHeader,
+                    { color: theme.colors.textSecondary },
                   ]}
                 >
-                  {mostRecent.progress >= 1 ? 'Read again' : 'Continue listening'}
+                  {mostRecent.progress >= 1 ? 'READ AGAIN' : 'CONTINUE LISTENING'}
                 </Text>
                 <PdfCard
                   document={mostRecent}
@@ -233,17 +234,11 @@ export default function LibraryScreen() {
               <View style={styles.section}>
                 <Text
                   style={[
-                    theme.typography.secondary,
-                    {
-                      color: theme.colors.textSecondary,
-                      marginBottom: 12,
-                      fontWeight: '600',
-                      textTransform: 'uppercase',
-                      letterSpacing: 0.5,
-                    },
+                    styles.sectionHeader,
+                    { color: theme.colors.textSecondary },
                   ]}
                 >
-                  Recent
+                  RECENT DOCUMENTS
                 </Text>
                 <ScrollView
                   horizontal
@@ -271,19 +266,28 @@ export default function LibraryScreen() {
               style={[
                 styles.addButtonSecondary,
                 {
+                  backgroundColor: theme.colors.surface,
                   borderColor: theme.colors.divider,
                 },
               ]}
             >
+              <Text style={[styles.addPlusIcon, { color: theme.colors.accent }]}>+</Text>
               <Text
                 style={[
                   theme.typography.body,
-                  { color: theme.colors.accent, fontWeight: '600' },
+                  { color: theme.colors.accent, fontWeight: '700' },
                 ]}
               >
-                + Add PDF
+                Add PDF or Document
               </Text>
             </TouchableOpacity>
+
+            {/* Privacy footer notice */}
+            <View style={styles.privacyNoticeContainer}>
+              <Text style={[styles.privacyNoticeText, { color: theme.colors.textSecondary }]}>
+                🔒 100% On-Device · Your documents never leave this phone
+              </Text>
+            </View>
           </>
         )}
       </ScrollView>
@@ -304,13 +308,20 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   settingsButton: {
-    width: 48,
-    height: 48,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 1,
   },
   settingsIcon: {
-    fontSize: 24,
+    fontSize: 20,
   },
   scrollView: {
     flex: 1,
@@ -318,6 +329,13 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 20,
     paddingBottom: 40,
+  },
+  sectionHeader: {
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: 12,
   },
   emptyState: {
     flex: 1,
@@ -328,16 +346,34 @@ const styles = StyleSheet.create({
   addButton: {
     paddingHorizontal: 32,
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 14,
     marginTop: 32,
+    shadowColor: '#4F46E5',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
   },
   addButtonSecondary: {
-    alignSelf: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginTop: 32,
+    width: '100%',
+    height: 58,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 28,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  addPlusIcon: {
+    fontSize: 24,
+    fontWeight: '400',
+    lineHeight: 26,
   },
   howItWorksButton: {
     marginTop: 20,
@@ -347,9 +383,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   section: {
-    marginTop: 24,
+    marginTop: 20,
   },
   recentRow: {
     gap: 12,
+    paddingBottom: 4,
+  },
+  privacyNoticeContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 18,
+    marginBottom: 8,
+  },
+  privacyNoticeText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
 });

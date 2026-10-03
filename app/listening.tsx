@@ -100,23 +100,18 @@ export default function ListeningScreen() {
         </TouchableOpacity>
         <Text
           style={[
-            theme.typography.secondary,
-            { color: theme.colors.textSecondary, flex: 1, textAlign: 'center' },
+            styles.headerTitle,
+            { color: theme.colors.textSecondary },
           ]}
         >
-          Now listening
+          NOW LISTENING
         </Text>
         <TouchableOpacity
           onPress={handleStop}
           accessibilityLabel="Stop playback"
           style={styles.stopButton}
         >
-          <Text
-            style={[
-              theme.typography.caption,
-              { color: theme.colors.error, fontWeight: '600' },
-            ]}
-          >
+          <Text style={styles.stopButtonText}>
             Stop
           </Text>
         </TouchableOpacity>
@@ -128,14 +123,18 @@ export default function ListeningScreen() {
         contentContainerStyle={styles.contentInner}
         showsVerticalScrollIndicator={false}
       >
-        {/* Document info */}
+        {/* Document info with folded corner badge */}
         <View style={styles.documentInfo}>
           <View
             style={[
               styles.documentIcon,
-              { backgroundColor: theme.colors.accentSoft },
+              {
+                backgroundColor: theme.colors.accentSoft,
+                borderColor: '#C7D2FE',
+              },
             ]}
           >
+            <View style={styles.documentFold} />
             <Text style={[styles.documentIconText, { color: theme.colors.accent }]}>
               PDF
             </Text>
@@ -146,10 +145,13 @@ export default function ListeningScreen() {
               {
                 color: theme.colors.textPrimary,
                 textAlign: 'center',
-                marginTop: 16,
+                marginTop: 14,
+                fontWeight: '800',
+                fontSize: 22,
+                lineHeight: 28,
               },
             ]}
-            numberOfLines={3}
+            numberOfLines={2}
           >
             {displayTitle}
           </Text>
@@ -159,7 +161,8 @@ export default function ListeningScreen() {
               {
                 color: theme.colors.textSecondary,
                 textAlign: 'center',
-                marginTop: 8,
+                marginTop: 6,
+                fontWeight: '500',
               },
             ]}
           >
@@ -221,17 +224,24 @@ export default function ListeningScreen() {
           </View>
         )}
 
-        {/* Current text preview (Spec Section 6.4) */}
+        {/* Current text preview card with Spoken Sentence pill */}
         {!isError && !isCompleted && (
           <View
             style={[
-              styles.textPreview,
+              styles.textCard,
               {
                 backgroundColor: theme.colors.surface,
                 borderColor: theme.colors.divider,
               },
             ]}
           >
+            <View style={[styles.cardLabelPill, { backgroundColor: theme.colors.accentSoft }]}>
+              <View style={[styles.pulseDot, { backgroundColor: theme.colors.accent }]} />
+              <Text style={[styles.cardLabelText, { color: theme.colors.accent }]}>
+                Spoken Sentence
+              </Text>
+            </View>
+
             {isLoading ? (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="small" color={theme.colors.accent} />
@@ -247,12 +257,8 @@ export default function ListeningScreen() {
             ) : (
               <Text
                 style={[
-                  theme.typography.body,
-                  {
-                    color: theme.colors.textPrimary,
-                    textAlign: 'left',
-                    lineHeight: 24,
-                  },
+                  styles.spokenQuoteText,
+                  { color: theme.colors.textPrimary },
                 ]}
               >
                 {playback.currentText
@@ -266,30 +272,30 @@ export default function ListeningScreen() {
         )}
       </ScrollView>
 
-      {/* Playback controls */}
+      {/* Playback controls panel */}
       <View
         style={[
-          styles.controls,
+          styles.controlsPanel,
           {
             backgroundColor: theme.colors.surface,
-            borderTopColor: theme.colors.divider,
+            borderColor: theme.colors.divider,
           },
         ]}
       >
-        {/* Progress */}
-        <ProgressBar progress={playback.progress} height={4} />
+        {/* Progress bar */}
+        <ProgressBar progress={playback.progress} height={6} />
 
-        {/* Progress percent */}
+        {/* Progress meta */}
         <View style={styles.progressRow}>
           <Text
-            style={[theme.typography.caption, { color: theme.colors.textSecondary }]}
+            style={[theme.typography.caption, { color: theme.colors.textSecondary, fontWeight: '600' }]}
           >
             Page {currentPage} of {pageCount}
           </Text>
           <Text
-            style={[theme.typography.caption, { color: theme.colors.textSecondary }]}
+            style={[theme.typography.caption, { color: theme.colors.textSecondary, fontWeight: '600' }]}
           >
-            {Math.round(playback.progress * 100)}%
+            {Math.round(playback.progress * 100)}% Completed
           </Text>
         </View>
 
@@ -302,16 +308,11 @@ export default function ListeningScreen() {
             activeOpacity={0.7}
             style={[
               styles.navButton,
-              { backgroundColor: theme.colors.surface, borderColor: theme.colors.divider },
+              { backgroundColor: theme.colors.background, borderColor: theme.colors.divider },
             ]}
           >
             <PrevTrackIcon size={20} color={theme.colors.textPrimary} />
-            <Text
-              style={[
-                theme.typography.caption,
-                { color: theme.colors.textSecondary, marginTop: 4, fontWeight: '600' },
-              ]}
-            >
+            <Text style={[styles.navButtonLabel, { color: theme.colors.textSecondary }]}>
               Prev
             </Text>
           </TouchableOpacity>
@@ -332,9 +333,9 @@ export default function ListeningScreen() {
             {isLoading ? (
               <ActivityIndicator color="#FFFFFF" size="small" />
             ) : isPlaying ? (
-              <PauseIcon size={28} color="#FFFFFF" />
+              <PauseIcon size={32} color="#FFFFFF" />
             ) : (
-              <PlayIcon size={28} color="#FFFFFF" />
+              <PlayIcon size={32} color="#FFFFFF" />
             )}
           </TouchableOpacity>
 
@@ -345,16 +346,11 @@ export default function ListeningScreen() {
             activeOpacity={0.7}
             style={[
               styles.navButton,
-              { backgroundColor: theme.colors.surface, borderColor: theme.colors.divider },
+              { backgroundColor: theme.colors.background, borderColor: theme.colors.divider },
             ]}
           >
             <NextTrackIcon size={20} color={theme.colors.textPrimary} />
-            <Text
-              style={[
-                theme.typography.caption,
-                { color: theme.colors.textSecondary, marginTop: 4, fontWeight: '600' },
-              ]}
-            >
+            <Text style={[styles.navButtonLabel, { color: theme.colors.textSecondary }]}>
               Next
             </Text>
           </TouchableOpacity>
@@ -362,51 +358,48 @@ export default function ListeningScreen() {
 
         {/* Speed presets */}
         <View style={styles.speedRow}>
-          {SPEED_PRESETS.map((speed) => (
-            <TouchableOpacity
-              key={speed}
-              onPress={() => handleSpeedChange(speed)}
-              accessibilityLabel={`Speed ${formatRate(speed)}`}
-              style={[
-                styles.speedButton,
-                playback.rate === speed && {
-                  backgroundColor: theme.colors.accentSoft,
-                },
-              ]}
-            >
-              <Text
+          {SPEED_PRESETS.map((speed) => {
+            const isSelected = playback.rate === speed;
+            return (
+              <TouchableOpacity
+                key={speed}
+                onPress={() => handleSpeedChange(speed)}
+                accessibilityLabel={`Speed ${formatRate(speed)}`}
                 style={[
-                  theme.typography.caption,
+                  styles.speedPill,
                   {
-                    color:
-                      playback.rate === speed
-                        ? theme.colors.accent
-                        : theme.colors.textSecondary,
-                    fontWeight: playback.rate === speed ? '700' : '500',
+                    backgroundColor: isSelected ? theme.colors.accentSoft : theme.colors.background,
+                    borderColor: isSelected ? theme.colors.accent : theme.colors.divider,
                   },
                 ]}
               >
-                {formatRate(speed)}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <Text
+                  style={[
+                    styles.speedPillText,
+                    {
+                      color: isSelected ? theme.colors.accent : theme.colors.textSecondary,
+                      fontWeight: isSelected ? '700' : '500',
+                    },
+                  ]}
+                >
+                  {formatRate(speed)}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
-        {/* Status text */}
-        <Text
-          style={[
-            theme.typography.caption,
-            { color: theme.colors.textSecondary, textAlign: 'center', marginTop: 4 },
-          ]}
-        >
-          {isPlaying
-            ? 'Background playback active · Lock screen to continue'
-            : isPaused
-            ? 'Playback paused'
-            : isCompleted
-            ? 'Playback completed'
-            : 'Offline playback ready'}
-        </Text>
+        {/* Background active badge */}
+        <View style={styles.bgBadge}>
+          <View style={styles.pulseDotGreen} />
+          <Text style={styles.bgBadgeText}>
+            {isPlaying
+              ? 'Background Service Active · Lock-screen Controls Ready'
+              : isPaused
+              ? 'Playback Paused · Ready to Resume'
+              : 'Offline Speech Engine Ready'}
+          </Text>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -419,67 +412,126 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 8,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  headerTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
   },
   backButton: {
-    width: 48,
-    height: 48,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
   backIcon: {
     fontSize: 32,
     fontWeight: '300',
+    lineHeight: 34,
   },
   stopButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  stopButtonText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#EF4444',
   },
   content: {
     flex: 1,
   },
   contentInner: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingBottom: 24,
     alignItems: 'center',
   },
   documentInfo: {
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: 12,
     marginBottom: 20,
     width: '100%',
   },
   documentIcon: {
-    width: 64,
-    height: 64,
+    width: 80,
+    height: 98,
     borderRadius: 16,
+    borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
+    shadowColor: '#4F46E5',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 3,
+  },
+  documentFold: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 22,
+    height: 22,
+    backgroundColor: '#C7D2FE',
+    borderBottomLeftRadius: 8,
   },
   documentIconText: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: '800',
     letterSpacing: 1,
   },
-  textPreview: {
+  textCard: {
     width: '100%',
-    minHeight: 120,
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 16,
-    justifyContent: 'center',
+    minHeight: 140,
+    borderRadius: 22,
+    borderWidth: 1.5,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    elevation: 2,
+  },
+  cardLabelPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 16,
+    marginBottom: 14,
+  },
+  pulseDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  cardLabelText: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  spokenQuoteText: {
+    fontSize: 18,
+    lineHeight: 28,
+    fontStyle: 'normal',
   },
   loadingContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
+    paddingVertical: 20,
   },
   errorCard: {
     width: '100%',
     padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 16,
+    borderWidth: 1.5,
     alignItems: 'center',
     marginBottom: 16,
     gap: 12,
@@ -487,66 +539,101 @@ const styles = StyleSheet.create({
   errorCardButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 10,
   },
   completedCard: {
     width: '100%',
     padding: 20,
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 16,
+    borderWidth: 1.5,
     alignItems: 'center',
     marginBottom: 16,
   },
-  controls: {
-    paddingHorizontal: 20,
+  controlsPanel: {
+    marginHorizontal: 16,
+    marginBottom: 12,
+    paddingHorizontal: 18,
     paddingTop: 16,
-    paddingBottom: 24,
-    borderTopWidth: 1,
-    gap: 10,
+    paddingBottom: 16,
+    borderRadius: 24,
+    borderWidth: 1.5,
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 20,
+    elevation: 4,
   },
   progressRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 4,
+    paddingHorizontal: 2,
   },
   mainControls: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-evenly',
-    paddingVertical: 8,
+    justifyContent: 'center',
+    gap: 28,
+    paddingVertical: 4,
   },
   playButton: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 78,
+    height: 78,
+    borderRadius: 39,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 14,
+    elevation: 8,
   },
   navButton: {
-    width: 62,
-    height: 62,
-    borderRadius: 31,
-    borderWidth: 1,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
     paddingTop: 4,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+  },
+  navButtonLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    marginTop: 2,
   },
   speedRow: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
+    justifyContent: 'space-between',
+    gap: 6,
+    marginTop: 2,
   },
-  speedButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+  speedPill: {
+    flex: 1,
+    height: 36,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  speedPillText: {
+    fontSize: 12,
+  },
+  bgBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 4,
+  },
+  pulseDotGreen: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: '#10B981',
+  },
+  bgBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#10B981',
   },
 });

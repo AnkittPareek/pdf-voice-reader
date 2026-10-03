@@ -89,17 +89,11 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text
             style={[
-              theme.typography.secondary,
-              {
-                color: theme.colors.textSecondary,
-                fontWeight: '600',
-                textTransform: 'uppercase',
-                letterSpacing: 0.5,
-                marginBottom: 12,
-              },
+              styles.sectionHeader,
+              { color: theme.colors.textSecondary },
             ]}
           >
-            Speech
+            SPEECH & TTS
           </Text>
 
           <View
@@ -119,15 +113,15 @@ export default function SettingsScreen() {
               accessibilityRole="button"
             >
               <Text
-                style={[theme.typography.body, { color: theme.colors.textPrimary }]}
+                style={[styles.rowLabel, { color: theme.colors.textPrimary }]}
               >
                 Voice
               </Text>
               <View style={styles.voiceSelectorPreview}>
                 <Text
                   style={[
-                    theme.typography.body,
-                    { color: theme.colors.accent, maxWidth: 180 },
+                    styles.rowValueAccent,
+                    { color: theme.colors.accent, maxWidth: 200 },
                   ]}
                   numberOfLines={1}
                 >
@@ -144,9 +138,9 @@ export default function SettingsScreen() {
             {/* Speed Row */}
             <View style={styles.settingColumn}>
               <Text
-                style={[theme.typography.body, { color: theme.colors.textPrimary }]}
+                style={[styles.rowLabel, { color: theme.colors.textPrimary }]}
               >
-                Default speed
+                Default reading speed
               </Text>
 
               {/* Horizontal swipeable speed presets */}
@@ -167,7 +161,7 @@ export default function SettingsScreen() {
                         {
                           backgroundColor: isSelected
                             ? theme.colors.accent
-                            : theme.colors.surface,
+                            : theme.colors.background,
                           borderColor: isSelected
                             ? theme.colors.accent
                             : theme.colors.divider,
@@ -176,7 +170,7 @@ export default function SettingsScreen() {
                     >
                       <Text
                         style={[
-                          theme.typography.caption,
+                          styles.speedButtonText,
                           {
                             color: isSelected
                               ? '#FFFFFF'
@@ -199,17 +193,11 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text
             style={[
-              theme.typography.secondary,
-              {
-                color: theme.colors.textSecondary,
-                fontWeight: '600',
-                textTransform: 'uppercase',
-                letterSpacing: 0.5,
-                marginBottom: 12,
-              },
+              styles.sectionHeader,
+              { color: theme.colors.textSecondary },
             ]}
           >
-            Appearance
+            APPEARANCE
           </Text>
 
           <View
@@ -223,13 +211,13 @@ export default function SettingsScreen() {
           >
             <View style={styles.settingRow}>
               <Text
-                style={[theme.typography.body, { color: theme.colors.textPrimary }]}
+                style={[styles.rowLabel, { color: theme.colors.textPrimary }]}
               >
                 Theme
               </Text>
               <Text
                 style={[
-                  theme.typography.body,
+                  styles.rowValueMuted,
                   { color: theme.colors.textSecondary },
                 ]}
               >
@@ -239,21 +227,15 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* Privacy & About section */}
+        {/* Privacy & Storage section */}
         <View style={styles.section}>
           <Text
             style={[
-              theme.typography.secondary,
-              {
-                color: theme.colors.textSecondary,
-                fontWeight: '600',
-                textTransform: 'uppercase',
-                letterSpacing: 0.5,
-                marginBottom: 12,
-              },
+              styles.sectionHeader,
+              { color: theme.colors.textSecondary },
             ]}
           >
-            About & Privacy
+            PRIVACY & STORAGE
           </Text>
 
           <View
@@ -265,37 +247,14 @@ export default function SettingsScreen() {
               },
             ]}
           >
-            <TouchableOpacity
-              style={styles.settingRow}
-              onPress={() => router.push('/welcome')}
-              accessibilityRole="button"
-              accessibilityLabel="How PDF Voice Works guide"
-            >
-              <Text
-                style={[theme.typography.body, { color: theme.colors.textPrimary }]}
-              >
-                How PDF Voice Works
-              </Text>
-              <Text style={[styles.chevron, { color: theme.colors.accent }]}>
-                ›
-              </Text>
-            </TouchableOpacity>
-
-            <View style={[styles.separator, { backgroundColor: theme.colors.divider }]} />
-
             <View style={styles.settingRow}>
               <Text
-                style={[theme.typography.body, { color: theme.colors.textPrimary }]}
+                style={[styles.rowLabel, { color: theme.colors.textPrimary }]}
               >
-                Offline First
+                Data Storage
               </Text>
-              <Text
-                style={[
-                  theme.typography.body,
-                  { color: theme.colors.textSecondary },
-                ]}
-              >
-                100% On-device
+              <Text style={[styles.rowValueSuccess, { color: '#10B981' }]}>
+                100% On-Device
               </Text>
             </View>
 
@@ -303,19 +262,45 @@ export default function SettingsScreen() {
 
             <View style={styles.settingRow}>
               <Text
-                style={[theme.typography.body, { color: theme.colors.textPrimary }]}
+                style={[styles.rowLabel, { color: theme.colors.textPrimary }]}
               >
-                Version
+                Cloud Sync
               </Text>
-              <Text
-                style={[
-                  theme.typography.body,
-                  { color: theme.colors.textSecondary },
-                ]}
-              >
-                1.0.0
+              <Text style={[styles.rowValueMuted, { color: theme.colors.textSecondary }]}>
+                Disabled (Zero Uploads)
               </Text>
             </View>
+
+            <View style={[styles.separator, { backgroundColor: theme.colors.divider }]} />
+
+            <View style={styles.settingRow}>
+              <Text
+                style={[styles.rowLabel, { color: theme.colors.textPrimary }]}
+              >
+                Advertising & Trackers
+              </Text>
+              <Text style={[styles.rowValueSuccess, { color: '#10B981' }]}>
+                None (Zero Tracking)
+              </Text>
+            </View>
+          </View>
+
+          {/* Guarantee banner box */}
+          <View
+            style={[
+              styles.guaranteeBox,
+              {
+                backgroundColor: theme.colors.accentSoft,
+                borderColor: '#C7D2FE',
+              },
+            ]}
+          >
+            <Text style={[styles.guaranteeTitle, { color: '#3730A3' }]}>
+              🛡️ Offline-First Reading
+            </Text>
+            <Text style={[styles.guaranteeDesc, { color: '#4338CA' }]}>
+              PDF Voice runs native on-device speech engines and local rendering. Your sensitive documents, books, and study material never leave your smartphone.
+            </Text>
           </View>
         </View>
       </ScrollView>
@@ -464,10 +449,22 @@ const styles = StyleSheet.create({
     gap: 24,
   },
   section: {},
+  sectionHeader: {
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: 12,
+  },
   card: {
-    borderRadius: 16,
-    borderWidth: 1,
+    borderRadius: 18,
+    borderWidth: 1.5,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
   },
   settingRow: {
     flexDirection: 'row',
@@ -476,6 +473,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
     minHeight: 56,
+  },
+  rowLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  rowValueAccent: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  rowValueMuted: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  rowValueSuccess: {
+    fontSize: 14,
+    fontWeight: '700',
   },
   voiceSelectorPreview: {
     flexDirection: 'row',
@@ -503,11 +516,30 @@ const styles = StyleSheet.create({
   speedButton: {
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    minWidth: 54,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    minWidth: 58,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  speedButtonText: {
+    fontSize: 13,
+  },
+  guaranteeBox: {
+    borderRadius: 18,
+    borderWidth: 1.5,
+    padding: 18,
+    marginTop: 18,
+  },
+  guaranteeTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+  guaranteeDesc: {
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: '500',
   },
   modalBackdrop: {
     flex: 1,
