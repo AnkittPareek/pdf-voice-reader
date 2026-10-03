@@ -22,6 +22,7 @@ import { usePlaybackStore } from '../src/state/playbackStore';
 import { formatRate } from '../src/utils/formatters';
 import { SPEED_PRESETS, SpeechVoice } from '../src/domain/speech/types';
 import { defaultSpeechEngine } from '../src/infrastructure/native/SpeechEngine';
+import { speechOrchestrator } from '../src/application/SpeechOrchestrator';
 
 export default function SettingsScreen() {
   const theme = useTheme();
@@ -49,6 +50,23 @@ export default function SettingsScreen() {
   const handleBack = useCallback(() => {
     router.back();
   }, [router]);
+
+  const handleSelectSpeed = useCallback(
+    async (speed: number) => {
+      setRate(speed);
+      await speechOrchestrator.setRate(speed);
+    },
+    [setRate]
+  );
+
+  const handleSelectVoice = useCallback(
+    async (voiceId: string) => {
+      setVoice(voiceId);
+      setShowVoiceModal(false);
+      await speechOrchestrator.setVoice(voiceId);
+    },
+    [setVoice]
+  );
 
   const activeVoiceName =
     voices.find((v) => v.id === selectedVoiceId)?.name || 'System default';
@@ -154,7 +172,7 @@ export default function SettingsScreen() {
                   return (
                     <TouchableOpacity
                       key={speed}
-                      onPress={() => setRate(speed)}
+                      onPress={() => handleSelectSpeed(speed)}
                       accessibilityLabel={`Speed ${formatRate(speed)}`}
                       style={[
                         styles.speedButton,
@@ -356,10 +374,7 @@ export default function SettingsScreen() {
                   (!selectedVoiceId && !item.id) || selectedVoiceId === item.id;
                 return (
                   <TouchableOpacity
-                    onPress={() => {
-                      setVoice(item.id);
-                      setShowVoiceModal(false);
-                    }}
+                    onPress={() => handleSelectVoice(item.id)}
                     style={[
                       styles.voiceModalItem,
                       {

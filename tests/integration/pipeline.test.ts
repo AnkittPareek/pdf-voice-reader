@@ -142,4 +142,73 @@ describe('PDF Voice Reader Pipeline Integration', () => {
     expect(state.state).toBe('error');
     expect(state.error).toBe('This PDF does not contain selectable text.');
   });
+
+  it('should not advance to next section when changing playback speed', async () => {
+    let currentResolve: ((completed: boolean) => void) | null = null;
+    const spokenList: { text: string; rate?: number }[] = [];
+
+    const mockTtsEngine = {
+      initialize: async () => {},
+      getVoices: async () => [],
+      speak: (text: string, options: any) =>
+        new Promise<boolean>((resolve) => {
+          spokenList.push({ text, rate: options?.rate });
+          currentResolve = resolve;
+        }),
+      stop: async () => {
+        const cb = currentResolve;
+        currentResolve = null;
+        cb?.(false); // Native TTS resolves false when interrupted/stopped
+      },
+      pause: async () => {},
+      resume: async () => true,
+      isSpeaking: async () => true,
+    };
+
+    const orchestrator = new SpeechOrchestrator(
+      defaultPdfEngine,
+      mockTtsEngine as any,
+      defaultPlaybackService
+    );
+
+    const startPromise = orchestrator.start(testDoc.id, 0, 0);
+
+    // Wait a tick for start to enter speaking state
+    await new Promise((r) => setTimeout(r, 10));
+
+    expect(usePlaybackStore.getState().state).toBe('speaking');
+    expect(usePlaybackStore.getState().chunkIndex).toBe(0);
+    expect(spokenList.length).toBe(1);
+    expect(spokenList[0].rate).toBe(1.0);
+
+    // Change playback speed to 1.5x while speaking
+    await orchestrator.setRate(1.5);
+    await new Promise((r) => setTimeout(r, 10));
+
+    // Verify rate is updated in store
+    expect(usePlaybackStore.getState().rate).toBe(1.5);
+
+    // CRITICAL: chunkIndex must NOT have skipped/jumped to 1!
+    expect(usePlaybackStore.getState().chunkIndex).toBe(0);
+
+    // Spoken list now has the re-queued chunk at 1.5x
+    expect(spokenList.length).toBe(2);
+    expect(spokenList[1].rate).toBe(1.5);
+
+    // Now let speech complete naturally
+    if (currentResolve) {
+      const cb: (completed: boolean) => void = currentResolve;
+      currentResolve = null;
+      cb(true);
+    }
+
+    // Wait for onChunkDone and store update
+    await new Promise((r) => setTimeout(r, 60));
+
+    // After natural completion, it advances to next page (page 0 has 1 chunk)
+    expect(usePlaybackStore.getState().pageIndex).toBe(1);
+
+    await orchestrator.stop();
+    await startPromise;
+  });
 });

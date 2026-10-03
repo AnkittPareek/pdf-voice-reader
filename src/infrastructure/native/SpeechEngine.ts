@@ -22,8 +22,8 @@ export interface SpeechEngine {
   /** List available voices on the device. */
   getVoices(): Promise<SpeechVoice[]>;
 
-  /** Speak text with the given options. Resolves when speech completes. */
-  speak(text: string, options: SpeechOptions): Promise<void>;
+  /** Speak text with the given options. Resolves true on natural completion, false if stopped/interrupted. */
+  speak(text: string, options: SpeechOptions): Promise<boolean | void>;
 
   /** Stop speech immediately. */
   stop(): Promise<void>;
@@ -31,8 +31,8 @@ export interface SpeechEngine {
   /** Pause speech (where supported by the platform). */
   pause(): Promise<void>;
 
-  /** Resume paused speech. */
-  resume(): Promise<void>;
+  /** Resume paused speech. Resolves true on natural completion, false if stopped/interrupted. */
+  resume(): Promise<boolean | void>;
 
   /** Check if the engine is currently speaking. */
   isSpeaking(): Promise<boolean>;
@@ -64,11 +64,12 @@ class FallbackSpeechEngine implements SpeechEngine {
     ];
   }
 
-  async speak(_text: string, _options: SpeechOptions): Promise<void> {
+  async speak(_text: string, _options: SpeechOptions): Promise<boolean | void> {
     this.speaking = true;
     this.paused = false;
     // Simulates instant or fast completion in tests
     this.speaking = false;
+    return true;
   }
 
   async stop(): Promise<void> {
@@ -83,11 +84,12 @@ class FallbackSpeechEngine implements SpeechEngine {
     }
   }
 
-  async resume(): Promise<void> {
+  async resume(): Promise<boolean | void> {
     if (this.paused) {
       this.speaking = true;
       this.paused = false;
     }
+    return true;
   }
 
   async isSpeaking(): Promise<boolean> {
@@ -118,10 +120,9 @@ class DefaultSpeechEngine implements SpeechEngine {
     return this.fallback.getVoices();
   }
 
-  async speak(text: string, options: SpeechOptions): Promise<void> {
+  async speak(text: string, options: SpeechOptions): Promise<boolean | void> {
     if (NativeSpeechEngine?.speak) {
-      await NativeSpeechEngine.speak(text, options);
-      return;
+      return await NativeSpeechEngine.speak(text, options);
     }
     return this.fallback.speak(text, options);
   }
@@ -142,10 +143,9 @@ class DefaultSpeechEngine implements SpeechEngine {
     return this.fallback.pause();
   }
 
-  async resume(): Promise<void> {
+  async resume(): Promise<boolean | void> {
     if (NativeSpeechEngine?.resume) {
-      await NativeSpeechEngine.resume();
-      return;
+      return await NativeSpeechEngine.resume();
     }
     return this.fallback.resume();
   }

@@ -69,6 +69,7 @@ export class SpeechOrchestrator {
   private currentChunks: SpeechChunk[] = [];
   private isRunning = false;
   private isPaused = false;
+  private playToken = 0;
   private unsubAction: (() => void) | null = null;
   private unsubRange: (() => void) | null = null;
   private docTitle = 'PDF Voice Reader';
@@ -168,6 +169,7 @@ export class SpeechOrchestrator {
   async pause(): Promise<void> {
     if (!this.isRunning || this.isPaused) return;
 
+    this.playToken++;
     this.isPaused = true;
     await this.speechEngine.pause();
     usePlaybackStore.getState().setState('paused');
@@ -204,7 +206,21 @@ export class SpeechOrchestrator {
       true
     );
 
-    await this.speechEngine.resume();
+    const currentToken = ++this.playToken;
+    try {
+      const completed = await this.speechEngine.resume();
+      if (completed === true) {
+        if (currentToken === this.playToken && this.isRunning && !this.isPaused) {
+          await this.onChunkDone();
+        }
+      }
+    } catch (err: any) {
+      if (currentToken === this.playToken && this.isRunning && !this.isPaused) {
+        usePlaybackStore
+          .getState()
+          .setError(err?.message || 'Error occurred during speech playback');
+      }
+    }
   }
 
   /**
@@ -233,6 +249,7 @@ export class SpeechOrchestrator {
   async nextChunk(): Promise<void> {
     if (!this.isRunning) return;
 
+    this.playToken++;
     await this.speechEngine.stop();
 
     if (this.currentChunkIndex + 1 < this.currentChunks.length) {
@@ -254,6 +271,7 @@ export class SpeechOrchestrator {
   async previousChunk(): Promise<void> {
     if (!this.isRunning) return;
 
+    this.playToken++;
     await this.speechEngine.stop();
 
     if (this.currentChunkIndex > 0) {
@@ -282,6 +300,7 @@ export class SpeechOrchestrator {
       return;
     }
 
+    this.playToken++;
     await this.speechEngine.stop();
     usePlaybackStore.getState().setCurrentRange(undefined);
 
@@ -300,8 +319,9 @@ export class SpeechOrchestrator {
   async setRate(rate: number): Promise<void> {
     usePlaybackStore.getState().setRate(rate);
     if (this.isRunning && !this.isPaused && usePlaybackStore.getState().state === 'speaking') {
+      this.playToken++;
       await this.speechEngine.stop();
-      await this.playCurrentChunk();
+      void this.playCurrentChunk();
     }
   }
 
@@ -310,6 +330,11 @@ export class SpeechOrchestrator {
    */
   async setVoice(voiceId: string): Promise<void> {
     usePlaybackStore.getState().setVoice(voiceId);
+    if (this.isRunning && !this.isPaused && usePlaybackStore.getState().state === 'speaking') {
+      this.playToken++;
+      await this.speechEngine.stop();
+      void this.playCurrentChunk();
+    }
   }
 
   private async playCurrentChunk(): Promise<void> {
@@ -389,14 +414,21 @@ export class SpeechOrchestrator {
     const rate = store.rate;
     const voiceId = store.voiceId;
 
+    const currentToken = ++this.playToken;
     try {
-      await this.speechEngine.speak(chunk.text, { rate, voiceId });
+      const completed = await this.speechEngine.speak(chunk.text, { rate, voiceId });
+
+      // If speech was superseded (e.g. by setRate, next, prev, jump, pause, stop)
+      // or if native speech returned false (interrupted/cancelled), do NOT advance chunk!
+      if (currentToken !== this.playToken || completed === false) {
+        return;
+      }
 
       if (this.isRunning && !this.isPaused) {
         await this.onChunkDone();
       }
     } catch (err: any) {
-      if (this.isRunning && !this.isPaused) {
+      if (currentToken === this.playToken && this.isRunning && !this.isPaused) {
         usePlaybackStore
           .getState()
           .setError(err?.message || 'Error occurred during speech playback');
@@ -467,6 +499,7 @@ export class SpeechOrchestrator {
   }
 
   private stopInternal(): void {
+    this.playToken++;
     this.isRunning = false;
     this.isPaused = false;
     this.currentChunks = [];
