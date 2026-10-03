@@ -11,7 +11,7 @@
  * - Briefly explain that files remain on-device
  */
 
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -30,14 +30,22 @@ import { PdfCard } from '../src/components/PdfCard/PdfCard';
 import { Document } from '../src/domain/documents/types';
 import { generateId } from '../src/utils/formatters';
 import { HAS_SEEN_WELCOME_KEY } from './welcome';
+import { BannerAdView } from '../src/components/Ads/BannerAdView';
+import { RewardedAdModal } from '../src/components/Ads/RewardedAdModal';
+import { adService } from '../src/application/AdService';
 
 export default function LibraryScreen() {
   const theme = useTheme();
   const router = useRouter();
   const { documents, loadDocuments, addDocument } = useLibraryStore();
+  const [showRewardedModal, setShowRewardedModal] = useState(false);
+  const [isAdFree, setIsAdFree] = useState(false);
 
   useEffect(() => {
     loadDocuments();
+    adService.initialize().then(() => {
+      setIsAdFree(adService.isAdFreeActive());
+    });
   }, [loadDocuments]);
 
   useEffect(() => {
@@ -55,6 +63,9 @@ export default function LibraryScreen() {
   useFocusEffect(
     useCallback(() => {
       loadDocuments();
+      adService.initialize().then(() => {
+        setIsAdFree(adService.isAdFreeActive());
+      });
     }, [loadDocuments])
   );
 
@@ -127,20 +138,44 @@ export default function LibraryScreen() {
         <Text style={[theme.typography.display, { color: theme.colors.textPrimary, fontWeight: '800' }]}>
           PDF Voice
         </Text>
-        <TouchableOpacity
-          onPress={handleSettingsPress}
-          accessibilityLabel="Settings"
-          accessibilityRole="button"
-          style={[
-            styles.settingsButton,
-            {
-              backgroundColor: theme.colors.surface,
-              borderColor: theme.colors.divider,
-            },
-          ]}
-        >
-          <Text style={[styles.settingsIcon, { color: theme.colors.textPrimary }]}>⚙</Text>
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            onPress={() => setShowRewardedModal(true)}
+            accessibilityLabel={isAdFree ? 'Ad-free status active' : 'Get 24 hours ad-free'}
+            accessibilityRole="button"
+            style={[
+              styles.adFreeBadge,
+              {
+                backgroundColor: isAdFree ? theme.colors.successSoft : theme.colors.accentSoft,
+                borderColor: isAdFree ? '#A7F3D0' : '#C7D2FE',
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.adFreeBadgeText,
+                { color: isAdFree ? theme.colors.success : theme.colors.accent },
+              ]}
+            >
+              {isAdFree ? '🛡️ Ad-Free' : '🎁 Ad-Free'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={handleSettingsPress}
+            accessibilityLabel="Settings"
+            accessibilityRole="button"
+            style={[
+              styles.settingsButton,
+              {
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.divider,
+              },
+            ]}
+          >
+            <Text style={[styles.settingsIcon, { color: theme.colors.textPrimary }]}>⚙</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
@@ -291,6 +326,16 @@ export default function LibraryScreen() {
           </>
         )}
       </ScrollView>
+
+      {/* Bottom Library Sponsor Banner */}
+      <BannerAdView onPressRemoveAds={() => setShowRewardedModal(true)} />
+
+      {/* 24h Ad-Free Rewarded Unlock Modal */}
+      <RewardedAdModal
+        visible={showRewardedModal}
+        onClose={() => setShowRewardedModal(false)}
+        onRewardGranted={() => setIsAdFree(true)}
+      />
     </SafeAreaView>
   );
 }
@@ -306,6 +351,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 8,
     paddingBottom: 16,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  adFreeBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  adFreeBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
   settingsButton: {
     width: 44,

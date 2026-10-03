@@ -38,6 +38,8 @@ import { speechOrchestrator } from '../src/application/SpeechOrchestrator';
 import { ReaderService } from '../src/application/ReaderService';
 import { formatRate, getDocumentDisplayName } from '../src/utils/formatters';
 import { PlayIcon, PauseIcon, PrevTrackIcon, NextTrackIcon, ExpandIcon, StopIcon } from '../src/components/AudioIcons/AudioIcons';
+import { InterstitialAdModal } from '../src/components/Ads/InterstitialAdModal';
+import { adService, ADMOB_CONFIG } from '../src/application/AdService';
 
 export default function ReaderScreen() {
   const theme = useTheme();
@@ -224,7 +226,27 @@ export default function ReaderScreen() {
     }
   }, [playback.chunkIndex, playback.pageIndex, isSpeechActive, playback.documentId, documentId, currentPageIndex, viewMode]);
 
+  const [showInterstitial, setShowInterstitial] = useState(false);
+  const sessionStartRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    sessionStartRef.current = Date.now();
+  }, []);
+
   const handleBack = useCallback(() => {
+    const readingTime = sessionStartRef.current ? Date.now() - sessionStartRef.current : 0;
+    if (
+      readingTime >= ADMOB_CONFIG.MIN_READING_DURATION_FOR_AD_MS &&
+      adService.canShowInterstitial()
+    ) {
+      setShowInterstitial(true);
+      return;
+    }
+    router.back();
+  }, [router]);
+
+  const handleCloseInterstitial = useCallback(() => {
+    setShowInterstitial(false);
     router.back();
   }, [router]);
 
@@ -880,6 +902,12 @@ export default function ReaderScreen() {
           </View>
         )}
       </View>
+
+      {/* Natural Break Interstitial on Exit */}
+      <InterstitialAdModal
+        visible={showInterstitial}
+        onClose={handleCloseInterstitial}
+      />
     </SafeAreaView>
   );
 }
