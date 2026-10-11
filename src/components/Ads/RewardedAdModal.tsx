@@ -3,6 +3,7 @@
  *
  * Voluntary opt-in ad mechanism (Highest eCPM: $15–$35).
  * Allows users to watch a short sponsor video in exchange for 24 hours of 100% ad-free reading.
+ * Powered by Google Mobile Ads (AdMob) Rewarded Ads.
  */
 
 import React, { useState } from 'react';
@@ -20,26 +21,45 @@ export function RewardedAdModal({ visible, onClose, onRewardGranted }: RewardedA
   const theme = useTheme();
   const [isWatching, setIsWatching] = useState(false);
   const [rewardClaimed, setRewardClaimed] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleWatchAd = async () => {
     setIsWatching(true);
+    setErrorMessage(null);
 
-    // Simulate standard rewarded ad playback (3 seconds test simulation)
-    setTimeout(async () => {
-      await adService.grantAdFreeHours(24);
-      setIsWatching(false);
-      setRewardClaimed(true);
-      onRewardGranted?.();
+    await adService.showRewardedAd(
+      () => {
+        // Reward earned successfully!
+        setIsWatching(false);
+        setRewardClaimed(true);
+        onRewardGranted?.();
 
-      setTimeout(() => {
-        setRewardClaimed(false);
-        onClose();
-      }, 1500);
-    }, 2800);
+        setTimeout(() => {
+          setRewardClaimed(false);
+          onClose();
+        }, 1600);
+      },
+      () => {
+        // Ad closed
+        setIsWatching(false);
+      },
+      (error) => {
+        console.warn('Rewarded ad failed:', error);
+        setIsWatching(false);
+        setErrorMessage('Sponsor video is temporarily unavailable. Please try again in a moment.');
+      }
+    );
+  };
+
+  const handleDismiss = () => {
+    setErrorMessage(null);
+    setIsWatching(false);
+    setRewardClaimed(false);
+    onClose();
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleDismiss}>
       <View style={styles.backdrop}>
         <View
           style={[
@@ -54,10 +74,10 @@ export function RewardedAdModal({ visible, onClose, onRewardGranted }: RewardedA
             <View style={styles.watchingContainer}>
               <ActivityIndicator size="large" color={theme.colors.accent} />
               <Text style={[styles.watchingTitle, { color: theme.colors.textPrimary }]}>
-                Playing Sponsor Video...
+                Loading Sponsor Video...
               </Text>
               <Text style={[styles.watchingDesc, { color: theme.colors.textSecondary }]}>
-                Reward grants 24 hours of ad-free reading
+                Completing the video unlocks 24 hours of ad-free reading
               </Text>
             </View>
           ) : rewardClaimed ? (
@@ -80,9 +100,15 @@ export function RewardedAdModal({ visible, onClose, onRewardGranted }: RewardedA
                 Watch a short sponsor video to support PDF Voice Reader and remove all ads for the next 24 hours.
               </Text>
 
+              {errorMessage && (
+                <View style={[styles.errorBanner, { backgroundColor: theme.colors.surface }]}>
+                  <Text style={[styles.errorText, { color: theme.colors.error }]}>{errorMessage}</Text>
+                </View>
+              )}
+
               <View style={styles.buttonRow}>
                 <TouchableOpacity
-                  onPress={onClose}
+                  onPress={handleDismiss}
                   style={[styles.cancelButton, { borderColor: theme.colors.divider }]}
                   accessibilityRole="button"
                 >
@@ -96,7 +122,7 @@ export function RewardedAdModal({ visible, onClose, onRewardGranted }: RewardedA
                   style={[styles.watchButton, { backgroundColor: theme.colors.accent }]}
                   accessibilityRole="button"
                 >
-                  <Text style={styles.watchButtonText}>Watch Sponsor (15s)</Text>
+                  <Text style={styles.watchButtonText}>Watch Video</Text>
                 </TouchableOpacity>
               </View>
             </>
@@ -142,7 +168,18 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
+  },
+  errorBanner: {
+    padding: 10,
+    borderRadius: 10,
+    marginBottom: 16,
+    width: '100%',
+  },
+  errorText: {
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 16,
   },
   buttonRow: {
     flexDirection: 'row',
@@ -151,19 +188,19 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     flex: 1,
-    height: 46,
+    paddingVertical: 12,
     borderRadius: 12,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   cancelButtonText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   watchButton: {
-    flex: 1.5,
-    height: 46,
+    flex: 1.3,
+    paddingVertical: 12,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
@@ -175,28 +212,29 @@ const styles = StyleSheet.create({
   },
   watchButtonText: {
     color: '#FFFFFF',
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
   },
   watchingContainer: {
     alignItems: 'center',
-    paddingVertical: 18,
+    paddingVertical: 20,
+    gap: 12,
   },
   watchingTitle: {
     fontSize: 16,
     fontWeight: '700',
-    marginTop: 16,
+    marginTop: 8,
   },
   watchingDesc: {
-    fontSize: 11,
-    marginTop: 6,
+    fontSize: 12,
+    textAlign: 'center',
   },
   rewardSuccessContainer: {
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 16,
+    gap: 8,
   },
   successEmoji: {
-    fontSize: 48,
-    marginBottom: 8,
+    fontSize: 44,
   },
 });

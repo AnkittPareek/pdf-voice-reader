@@ -8,6 +8,7 @@ module.exports = {
   moduleNameMapper: {
     '^expo-modules-core$': '<rootDir>/tests/mocks/expo-modules-core.ts',
     '^expo-sqlite$': '<rootDir>/tests/mocks/expo-sqlite.ts',
+    '^react-native-google-mobile-ads$': '<rootDir>/tests/mocks/react-native-google-mobile-ads.ts',
   },
   transform: {
     '^.+\\.tsx?$': ['ts-jest', {

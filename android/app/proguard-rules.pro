@@ -37,6 +37,8 @@
 -keep class com.google.android.gms.ads.** { *; }
 -keep class com.google.android.gms.common.** { *; }
 -dontwarn com.google.android.gms.ads.**
+-keep class io.invertase.googlemobileads.** { *; }
+-dontwarn io.invertase.googlemobileads.**
 
 # Preserve LineNumberTable and SourceFile for Google Play Console crash deobfuscation
 -keepattributes SourceFile,LineNumberTable

@@ -6,9 +6,10 @@
  * - Clear, immediate close button (✕).
  * - Never displayed while speech audio is playing or paused in background.
  * - Enforces minimum 8-minute cooldown between displays.
+ * - Integrates with official Google AdMob Interstitial Ad.
  */
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity } from 'react-native';
 import { useTheme } from '../../theme/theme';
 import { adService } from '../../application/AdService';
@@ -20,6 +21,21 @@ interface InterstitialAdModalProps {
 
 export function InterstitialAdModal({ visible, onClose }: InterstitialAdModalProps) {
   const theme = useTheme();
+  const triedAdMobRef = useRef(false);
+
+  useEffect(() => {
+    if (visible && !triedAdMobRef.current) {
+      triedAdMobRef.current = true;
+      adService.showInterstitial().then((shown) => {
+        if (shown) {
+          // Native AdMob full-screen activity took over; close wrapper modal
+          onClose();
+        }
+      });
+    } else if (!visible) {
+      triedAdMobRef.current = false;
+    }
+  }, [visible, onClose]);
 
   const handleClose = async () => {
     await adService.recordInterstitialShown();
@@ -68,7 +84,7 @@ export function InterstitialAdModal({ visible, onClose }: InterstitialAdModalPro
               onPress={handleClose}
               style={[styles.ctaButton, { backgroundColor: theme.colors.accent }]}
             >
-              <Text style={styles.ctaButtonText}>Learn More</Text>
+              <Text style={styles.ctaButtonText}>Continue</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -99,7 +115,7 @@ const styles = StyleSheet.create({
   adBadge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 8,
+    borderRadius: 6,
   },
   adBadgeText: {
     fontSize: 11,
@@ -116,47 +132,48 @@ const styles = StyleSheet.create({
   },
   closeButtonText: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   content: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingVertical: 20,
   },
   adCreativeCard: {
     width: '100%',
-    padding: 32,
     borderRadius: 24,
     borderWidth: 1,
+    padding: 28,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 6,
   },
   adArt: {
     fontSize: 64,
-    marginBottom: 18,
+    marginBottom: 16,
   },
   adHeadline: {
-    fontSize: 22,
-    fontWeight: '800',
+    fontSize: 20,
+    fontWeight: '700',
     textAlign: 'center',
     marginBottom: 10,
   },
   adBodyText: {
     fontSize: 14,
-    lineHeight: 21,
+    lineHeight: 20,
     textAlign: 'center',
-    marginBottom: 28,
+    marginBottom: 24,
   },
   ctaButton: {
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    borderRadius: 14,
     width: '100%',
-    height: 52,
-    borderRadius: 16,
     alignItems: 'center',
-    justifyContent: 'center',
   },
   ctaButtonText: {
     color: '#FFFFFF',
@@ -164,10 +181,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   footer: {
-    alignItems: 'center',
     paddingBottom: 24,
+    alignItems: 'center',
   },
   footerText: {
-    fontSize: 11,
+    fontSize: 12,
   },
 });

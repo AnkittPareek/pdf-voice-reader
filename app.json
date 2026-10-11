@@ -15,7 +15,7 @@
       "package": "com.pdfvoice.app",
       "versionCode": 2,
       "adaptiveIcon": {
-        "backgroundColor": "#4F46E5",
+        "backgroundColor": "#2F25A8",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -30,11 +30,12 @@
     },
     "plugins": [
       "expo-router",
-      "expo-sqlite"
+      "expo-sqlite",
+      "react-native-google-mobile-ads"
     ],
-    "newArchEnabled": true,
-    "react-native-google-mobile-ads": {
-      "android_app_id": "ca-app-pub-1897406819003628~4977435362"
-    }
+    "newArchEnabled": true
+  },
+  "react-native-google-mobile-ads": {
+    "android_app_id": "ca-app-pub-1897406819003628~4977435362"
   }
 }
