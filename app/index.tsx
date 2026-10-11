@@ -141,7 +141,7 @@ export default function LibraryScreen() {
         <View style={styles.headerActions}>
           <TouchableOpacity
             onPress={() => setShowRewardedModal(true)}
-            accessibilityLabel={isAdFree ? 'Ad-free status active' : 'Get 24 hours ad-free'}
+            accessibilityLabel={isAdFree ? 'Ad-free status active' : 'Get 1 hour ad-free'}
             accessibilityRole="button"
             style={[
               styles.adFreeBadge,
@@ -330,7 +330,7 @@ export default function LibraryScreen() {
       {/* Bottom Library Sponsor Banner */}
       <BannerAdView onPressRemoveAds={() => setShowRewardedModal(true)} />
 
-      {/* 24h Ad-Free Rewarded Unlock Modal */}
+      {/* 1h Ad-Free Rewarded Unlock Modal */}
       <RewardedAdModal
         visible={showRewardedModal}
         onClose={() => setShowRewardedModal(false)}

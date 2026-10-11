@@ -2,7 +2,7 @@
  * PDF Voice Reader — Rewarded Ad Modal
  *
  * Voluntary opt-in ad mechanism (Highest eCPM: $15–$35).
- * Allows users to watch a short sponsor video in exchange for 24 hours of 100% ad-free reading.
+ * Allows users to watch a short sponsor video in exchange for 1 hour of 100% ad-free reading.
  * Powered by Google Mobile Ads (AdMob) Rewarded Ads.
  */
 
@@ -77,7 +77,7 @@ export function RewardedAdModal({ visible, onClose, onRewardGranted }: RewardedA
                 Loading Sponsor Video...
               </Text>
               <Text style={[styles.watchingDesc, { color: theme.colors.textSecondary }]}>
-                Completing the video unlocks 24 hours of ad-free reading
+                Completing the video unlocks 1 hour of ad-free reading
               </Text>
             </View>
           ) : rewardClaimed ? (
@@ -87,17 +87,17 @@ export function RewardedAdModal({ visible, onClose, onRewardGranted }: RewardedA
                 Ad-Free Unlocked!
               </Text>
               <Text style={[styles.description, { color: theme.colors.textSecondary }]}>
-                Enjoy 24 hours of completely uninterrupted reading and listening.
+                Enjoy 1 hour of completely uninterrupted reading and listening.
               </Text>
             </View>
           ) : (
             <>
               <Text style={styles.giftEmoji}>🎁</Text>
               <Text style={[styles.title, { color: theme.colors.textPrimary }]}>
-                Get 24 Hours Ad-Free
+                Get 1 Hour Ad-Free
               </Text>
               <Text style={[styles.description, { color: theme.colors.textSecondary }]}>
-                Watch a short sponsor video to support PDF Voice Reader and remove all ads for the next 24 hours.
+                Watch a short sponsor video to support PDF Voice Reader and remove all ads for the next 1 hour.
               </Text>
 
               {errorMessage && (

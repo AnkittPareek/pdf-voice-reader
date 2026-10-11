@@ -3,7 +3,7 @@
  *
  * Renders official Google AdMob Banner anchored at the bottom of the Library screen.
  * - Automatically hides when the user has active Ad-Free time.
- * - Tapping "Remove" triggers the Rewarded Ad modal to grant 24h Ad-Free time.
+ * - Tapping "Remove" triggers the Rewarded Ad modal to grant 1h Ad-Free time.
  * - Fits seamlessly into both Light and Dark themes.
  */
 
@@ -57,10 +57,10 @@ export function BannerAdView({ onPressRemoveAds }: BannerAdViewProps) {
             onPress={onPressRemoveAds}
             style={[styles.removeButton, { borderColor: theme.colors.divider }]}
             accessibilityRole="button"
-            accessibilityLabel="Remove ads for 24 hours"
+            accessibilityLabel="Remove ads for 1 hour"
           >
             <Text style={[styles.removeButtonText, { color: theme.colors.accent }]}>
-              Remove (24h)
+              Remove (1h)
             </Text>
           </TouchableOpacity>
         )}

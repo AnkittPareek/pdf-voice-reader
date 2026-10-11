@@ -321,6 +321,62 @@ export default function SettingsScreen() {
             </Text>
           </View>
         </View>
+
+        {/* About section */}
+        <View style={styles.section}>
+          <Text
+            style={[
+              styles.sectionHeader,
+              { color: theme.colors.textSecondary },
+            ]}
+          >
+            ABOUT
+          </Text>
+
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.divider,
+              },
+            ]}
+          >
+            <View style={styles.settingRow}>
+              <Text
+                style={[styles.rowLabel, { color: theme.colors.textPrimary }]}
+              >
+                Version
+              </Text>
+              <Text
+                style={[
+                  styles.rowValueMuted,
+                  { color: theme.colors.textSecondary },
+                ]}
+              >
+                1.0.2 (Build 3)
+              </Text>
+            </View>
+
+            <View style={[styles.separator, { backgroundColor: theme.colors.divider }]} />
+
+            <View style={styles.settingRow}>
+              <Text
+                style={[styles.rowLabel, { color: theme.colors.textPrimary }]}
+              >
+                Speech Engine
+              </Text>
+              <Text
+                style={[
+                  styles.rowValueMuted,
+                  { color: theme.colors.textSecondary },
+                ]}
+              >
+                Native Android TTS
+              </Text>
+            </View>
+          </View>
+        </View>
       </ScrollView>
 
       {/* Voice Selection Modal */}

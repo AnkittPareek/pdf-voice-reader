@@ -3,7 +3,7 @@
  *
  * Revenue & UX Architecture:
  * 1. Rewarded Ads (Highest eCPM: $15–$35, Zero Annoyance):
- *    Users voluntarily watch a 15–30s sponsor video to unlock 24 hours of Ad-Free reading & Pro perks.
+ *    Users voluntarily watch a 15–30s sponsor video to unlock 1 hour of Ad-Free reading & Pro perks.
  * 2. Natural-Break Interstitials (High eCPM: $6–$12, Strictly Frequency Capped):
  *    Shown ONLY upon returning from Reader to Library after at least 45s of reading.
  *    Strict 8-minute cooldown. NEVER shown while speech is active or paused.
@@ -77,6 +77,17 @@ export class AdService {
     } catch (e) {
       console.warn('AdService initialization error:', e);
     }
+  }
+
+  /**
+   * Reset internal state for test isolation.
+   */
+  resetForTesting(): void {
+    this.adFreeUntil = null;
+    this.lastInterstitialTimestamp = 0;
+    this.isInitialized = false;
+    this.isInterstitialLoaded = false;
+    this.interstitial = null;
   }
 
   /**
@@ -212,7 +223,7 @@ export class AdService {
 
   /**
    * Request and present a Google AdMob Rewarded Ad.
-   * When video finishes, reward callback is executed and 24 hours of ad-free reading is granted.
+   * When video finishes, reward callback is executed and 1 hour of ad-free reading is granted.
    */
   async showRewardedAd(
     onRewardEarned: () => void,
@@ -243,7 +254,7 @@ export class AdService {
       cleanups.push(unsubLoaded);
 
       const unsubReward = rewarded.addAdEventListener(RewardedAdEventType.EARNED_REWARD, async () => {
-        await this.grantAdFreeHours(24);
+        await this.grantAdFreeHours(1);
         onRewardEarned();
       });
       cleanups.push(unsubReward);
