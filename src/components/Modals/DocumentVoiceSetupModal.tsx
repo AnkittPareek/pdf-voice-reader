@@ -6,7 +6,7 @@
  * and allows instant on-device audio previewing with native language phrases.
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,8 @@ import {
 import { useTheme } from '../../theme/theme';
 import { SpeechVoice } from '../../domain/speech/types';
 import { defaultSpeechEngine } from '../../infrastructure/native/SpeechEngine';
+import { speechOrchestrator } from '../../application/SpeechOrchestrator';
+import { usePlaybackStore } from '../../state/playbackStore';
 import {
   getAvailableVoiceLanguages,
   filterVoicesByLanguage,
@@ -52,11 +54,25 @@ export function DocumentVoiceSetupModal({
   const [selectedLanguage, setSelectedLanguage] = useState<string>(detectedLanguageCode);
   const [selectedVoiceId, setSelectedVoiceId] = useState<string>(initialVoiceId);
   const [previewingVoiceId, setPreviewingVoiceId] = useState<string | null>(null);
+  const isPreviewingRef = useRef(false);
 
-  // Stop audio on unmount
+  // Stop preview audio ONLY if actively previewing
+  const stopPreviewIfActive = useCallback(async () => {
+    if (isPreviewingRef.current) {
+      try {
+        await defaultSpeechEngine.stop();
+      } catch {}
+      isPreviewingRef.current = false;
+    }
+  }, []);
+
+  // Stop audio preview on unmount ONLY if modal was actively playing a voice preview
   useEffect(() => {
     return () => {
-      defaultSpeechEngine.stop().catch(() => {});
+      if (isPreviewingRef.current) {
+        defaultSpeechEngine.stop().catch(() => {});
+        isPreviewingRef.current = false;
+      }
     };
   }, []);
 
@@ -76,12 +92,18 @@ export function DocumentVoiceSetupModal({
       const voiceKey = voiceId || 'system_default';
       try {
         if (previewingVoiceId === voiceKey) {
-          await defaultSpeechEngine.stop();
+          await stopPreviewIfActive();
           setPreviewingVoiceId(null);
           return;
         }
 
-        await defaultSpeechEngine.stop();
+        // If background document speech is currently playing, pause it before previewing voice
+        if (usePlaybackStore.getState().state === 'speaking') {
+          await speechOrchestrator.pause();
+        }
+
+        await stopPreviewIfActive();
+        isPreviewingRef.current = true;
         setPreviewingVoiceId(voiceKey);
 
         const targetVoice = voices.find((v) => v.id === voiceId);
@@ -91,40 +113,45 @@ export function DocumentVoiceSetupModal({
           voiceId: voiceId && voiceId !== 'system_default' ? voiceId : undefined,
           rate: 1.0,
         });
+        isPreviewingRef.current = false;
         setPreviewingVoiceId(null);
       } catch (e) {
         console.warn('Voice preview error in setup modal:', e);
+        isPreviewingRef.current = false;
         setPreviewingVoiceId(null);
       }
     },
-    [previewingVoiceId, voices, selectedLanguage]
+    [previewingVoiceId, stopPreviewIfActive, voices, selectedLanguage]
   );
 
-  const handleSelectLanguage = useCallback((langCode: string) => {
-    defaultSpeechEngine.stop().catch(() => {});
-    setPreviewingVoiceId(null);
-    setSelectedLanguage(langCode);
+  const handleSelectLanguage = useCallback(
+    async (langCode: string) => {
+      await stopPreviewIfActive();
+      setPreviewingVoiceId(null);
+      setSelectedLanguage(langCode);
 
-    // If changing language, clear or auto-select voice matching that language
-    const matching = filterVoicesByLanguage(voices, langCode);
-    if (matching.length > 0) {
-      setSelectedVoiceId(matching[0].id);
-    } else {
-      setSelectedVoiceId('');
-    }
-  }, [voices]);
+      // If changing language, clear or auto-select voice matching that language
+      const matching = filterVoicesByLanguage(voices, langCode);
+      if (matching.length > 0) {
+        setSelectedVoiceId(matching[0].id);
+      } else {
+        setSelectedVoiceId('');
+      }
+    },
+    [stopPreviewIfActive, voices]
+  );
 
-  const handleConfirm = useCallback(() => {
-    defaultSpeechEngine.stop().catch(() => {});
+  const handleConfirm = useCallback(async () => {
+    await stopPreviewIfActive();
     setPreviewingVoiceId(null);
     onConfirm(selectedVoiceId, selectedLanguage);
-  }, [onConfirm, selectedVoiceId, selectedLanguage]);
+  }, [onConfirm, selectedVoiceId, selectedLanguage, stopPreviewIfActive]);
 
-  const handleClose = useCallback(() => {
-    defaultSpeechEngine.stop().catch(() => {});
+  const handleClose = useCallback(async () => {
+    await stopPreviewIfActive();
     setPreviewingVoiceId(null);
     onCancel();
-  }, [onCancel]);
+  }, [onCancel, stopPreviewIfActive]);
 
   const displayDetectedName =
     detectedLanguageName || getLanguageDisplayName(detectedLanguageCode);

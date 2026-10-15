@@ -5,7 +5,7 @@
  * Settings: TTS voice, Language, Speed, Theme, About/privacy
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -54,6 +54,17 @@ export default function SettingsScreen() {
     return list;
   }, [voices, selectedLanguage]);
 
+  const isPreviewingRef = useRef(false);
+
+  const stopPreviewIfActive = useCallback(async () => {
+    if (isPreviewingRef.current) {
+      try {
+        await defaultSpeechEngine.stop();
+      } catch {}
+      isPreviewingRef.current = false;
+    }
+  }, []);
+
   useEffect(() => {
     async function loadVoices() {
       try {
@@ -66,14 +77,17 @@ export default function SettingsScreen() {
     loadVoices();
 
     return () => {
-      defaultSpeechEngine.stop().catch(() => {});
+      if (isPreviewingRef.current) {
+        defaultSpeechEngine.stop().catch(() => {});
+        isPreviewingRef.current = false;
+      }
     };
   }, []);
 
-  const handleBack = useCallback(() => {
-    defaultSpeechEngine.stop().catch(() => {});
+  const handleBack = useCallback(async () => {
+    await stopPreviewIfActive();
     router.back();
-  }, [router]);
+  }, [router, stopPreviewIfActive]);
 
   const handleSelectSpeed = useCallback(
     async (speed: number) => {
@@ -88,7 +102,7 @@ export default function SettingsScreen() {
       const voiceKey = voiceId || 'system_default';
       try {
         if (previewingVoiceId === voiceKey) {
-          await defaultSpeechEngine.stop();
+          await stopPreviewIfActive();
           setPreviewingVoiceId(null);
           return;
         }
@@ -98,7 +112,8 @@ export default function SettingsScreen() {
           await speechOrchestrator.pause();
         }
 
-        await defaultSpeechEngine.stop();
+        await stopPreviewIfActive();
+        isPreviewingRef.current = true;
         setPreviewingVoiceId(voiceKey);
 
         const targetVoice = voices.find((v) => v.id === voiceId);
@@ -107,25 +122,27 @@ export default function SettingsScreen() {
           voiceId: voiceId && voiceId !== 'system_default' ? voiceId : undefined,
           rate: rate || 1.0,
         });
+        isPreviewingRef.current = false;
         setPreviewingVoiceId(null);
       } catch (e) {
         console.warn('Voice preview error:', e);
+        isPreviewingRef.current = false;
         setPreviewingVoiceId(null);
       }
     },
-    [previewingVoiceId, rate, voices, selectedLanguage]
+    [previewingVoiceId, rate, voices, selectedLanguage, stopPreviewIfActive]
   );
 
   const handleSelectVoice = useCallback(
     async (voiceId: string) => {
-      await defaultSpeechEngine.stop();
+      await stopPreviewIfActive();
       setPreviewingVoiceId(null);
       setVoice(voiceId);
       setShowVoiceModal(false);
       await speechOrchestrator.setVoice(voiceId);
       await adService.showInterstitial();
     },
-    [setVoice]
+    [setVoice, stopPreviewIfActive]
   );
 
   const activeVoiceName =

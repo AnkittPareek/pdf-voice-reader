@@ -508,17 +508,19 @@ export default function LibraryScreen() {
       />
 
       {/* Per-Document Narrator Voice & Language Setup Modal */}
-      <DocumentVoiceSetupModal
-        key={pendingDoc?.id || 'new_doc_voice_modal'}
-        visible={showVoiceSetupModal}
-        documentTitle={pendingDoc?.fileName || 'Document'}
-        detectedLanguageCode={detectedLanguage.code}
-        detectedLanguageName={detectedLanguage.name}
-        initialVoiceId={pendingDoc?.voiceId || ''}
-        voices={voices}
-        onConfirm={handleConfirmDocVoice}
-        onCancel={handleCancelDocVoice}
-      />
+      {showVoiceSetupModal && (
+        <DocumentVoiceSetupModal
+          key={pendingDoc?.id || 'new_doc_voice_modal'}
+          visible={showVoiceSetupModal}
+          documentTitle={pendingDoc?.fileName || 'Document'}
+          detectedLanguageCode={detectedLanguage.code}
+          detectedLanguageName={detectedLanguage.name}
+          initialVoiceId={pendingDoc?.voiceId || ''}
+          voices={voices}
+          onConfirm={handleConfirmDocVoice}
+          onCancel={handleCancelDocVoice}
+        />
+      )}
     </SafeAreaView>
   );
 }

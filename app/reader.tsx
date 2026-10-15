@@ -130,7 +130,16 @@ export default function ReaderScreen() {
         }
 
         setDocument(doc);
-        setCurrentPageIndex(doc.lastPositionPage ?? 0);
+        const currentPlayback = usePlaybackStore.getState();
+        if (
+          currentPlayback.documentId === documentId &&
+          (currentPlayback.state === 'speaking' || currentPlayback.state === 'paused') &&
+          currentPlayback.pageIndex >= 0
+        ) {
+          setCurrentPageIndex(currentPlayback.pageIndex);
+        } else {
+          setCurrentPageIndex(doc.lastPositionPage ?? 0);
+        }
       } catch (err: any) {
         console.error('Failed to open document:', err);
         setError(err?.message || 'Failed to open document');
@@ -1115,9 +1124,9 @@ export default function ReaderScreen() {
       />
 
       {/* Per-Document Narrator Voice & Language Setup Modal */}
-      {document && (
+      {document && showVoiceModal && (
         <DocumentVoiceSetupModal
-          key={`${document.id}_${document.voiceId || 'default'}_${showVoiceModal}`}
+          key={`${document.id}_${document.voiceId || 'default'}`}
           visible={showVoiceModal}
           documentTitle={getDocumentDisplayName(document.title, document.fileName)}
           detectedLanguageCode={document.language || 'en'}
