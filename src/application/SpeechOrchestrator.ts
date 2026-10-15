@@ -73,6 +73,7 @@ export class SpeechOrchestrator {
   private unsubAction: (() => void) | null = null;
   private unsubRange: (() => void) | null = null;
   private docTitle = 'PDF Voice Reader';
+  private customStartOffset = 0;
 
   constructor(
     pdfEngine: PdfEngine = defaultPdfEngine,
@@ -90,9 +91,11 @@ export class SpeechOrchestrator {
   async start(
     documentId: string,
     startPageIndex = 0,
-    startChunkIndex = 0
+    startChunkIndex = 0,
+    startCharOffset = 0
   ): Promise<void> {
     this.stopInternal();
+    this.customStartOffset = Math.max(0, startCharOffset);
 
     const doc = await DocumentRepository.getById(documentId);
     if (!doc) {
@@ -147,7 +150,11 @@ export class SpeechOrchestrator {
       this.unsubRange?.();
       if (this.speechEngine.onRange) {
         this.unsubRange = this.speechEngine.onRange((event) => {
-          usePlaybackStore.getState().setCurrentRange({ start: event.start, end: event.end });
+          const offset = this.customStartOffset;
+          usePlaybackStore.getState().setCurrentRange({
+            start: event.start + offset,
+            end: event.end + offset,
+          });
         });
       }
 
@@ -288,15 +295,22 @@ export class SpeechOrchestrator {
   }
 
   /**
-   * Jump directly to a chunk and start reading aloud immediately.
-   * Enables ReadEra-style "tap to read from here" in Reader view.
+   * Jump directly to a page, chunk, and optional character/word offset.
+   * Starts speaking immediately from that exact position.
    */
-  async jumpToChunk(pageIndex: number, chunkIndex: number, documentId?: string): Promise<void> {
+  async jumpToPosition(
+    pageIndex: number,
+    chunkIndex: number,
+    charOffset = 0,
+    documentId?: string
+  ): Promise<void> {
     const targetDocId = documentId || this.activeDocumentId;
     if (!targetDocId) return;
 
+    this.customStartOffset = Math.max(0, charOffset);
+
     if (targetDocId !== this.activeDocumentId || !this.isRunning) {
-      await this.start(targetDocId, pageIndex, chunkIndex);
+      await this.start(targetDocId, pageIndex, chunkIndex, this.customStartOffset);
       return;
     }
 
@@ -311,6 +325,14 @@ export class SpeechOrchestrator {
     this.currentChunkIndex = chunkIndex;
     this.isPaused = false;
     await this.playCurrentChunk();
+  }
+
+  /**
+   * Jump directly to a chunk and start reading aloud immediately.
+   * Enables ReadEra-style "tap to read from here" in Reader view.
+   */
+  async jumpToChunk(pageIndex: number, chunkIndex: number, documentId?: string): Promise<void> {
+    await this.jumpToPosition(pageIndex, chunkIndex, 0, documentId);
   }
 
   /**
@@ -414,9 +436,15 @@ export class SpeechOrchestrator {
     const rate = store.rate;
     const voiceId = store.voiceId;
 
+    const startOffset = this.customStartOffset;
+    const textToSpeak =
+      startOffset > 0 && startOffset < chunk.text.length
+        ? chunk.text.slice(startOffset).trim()
+        : chunk.text;
+
     const currentToken = ++this.playToken;
     try {
-      const completed = await this.speechEngine.speak(chunk.text, { rate, voiceId });
+      const completed = await this.speechEngine.speak(textToSpeak, { rate, voiceId });
 
       // If speech was superseded (e.g. by setRate, next, prev, jump, pause, stop)
       // or if native speech returned false (interrupted/cancelled), do NOT advance chunk!
@@ -437,6 +465,7 @@ export class SpeechOrchestrator {
   }
 
   private async onChunkDone(): Promise<void> {
+    this.customStartOffset = 0;
     if (!this.isRunning || this.isPaused || !this.activeDocumentId) return;
 
     if (this.currentChunkIndex + 1 < this.currentChunks.length) {
@@ -502,6 +531,7 @@ export class SpeechOrchestrator {
     this.playToken++;
     this.isRunning = false;
     this.isPaused = false;
+    this.customStartOffset = 0;
     this.currentChunks = [];
     this.unsubAction?.();
     this.unsubAction = null;

@@ -7,7 +7,7 @@
  * "Do not bury Play/Pause inside settings."
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  BackHandler,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -26,6 +27,8 @@ import { formatRate, getDocumentDisplayName } from '../src/utils/formatters';
 import { SPEED_PRESETS } from '../src/domain/speech/types';
 import { speechOrchestrator } from '../src/application/SpeechOrchestrator';
 import { PlayIcon, PauseIcon, PrevTrackIcon, NextTrackIcon } from '../src/components/AudioIcons/AudioIcons';
+import { adService } from '../src/application/AdService';
+import { BackgroundPlaybackExitModal } from '../src/components/Modals/BackgroundPlaybackExitModal';
 
 export default function ListeningScreen() {
   const theme = useTheme();
@@ -37,25 +40,63 @@ export default function ListeningScreen() {
   const documents = useLibraryStore((s) => s.documents);
   const document = documents.find((d) => d.id === (documentId || playback.documentId));
 
+  const [showExitModal, setShowExitModal] = useState(false);
+
   const handleBack = useCallback(() => {
+    if (playback.state === 'speaking' || playback.state === 'paused') {
+      setShowExitModal(true);
+      return;
+    }
+
+    adService.showInterstitialOrContinue(() => {
+      router.back();
+    });
+  }, [playback.state, router]);
+
+  const handleContinueInBackground = useCallback(() => {
+    setShowExitModal(false);
     router.back();
   }, [router]);
+
+  const handleStopAndExit = useCallback(async () => {
+    setShowExitModal(false);
+    await speechOrchestrator.stop();
+    await adService.showInterstitialOrContinue(() => {
+      router.back();
+    });
+  }, [router]);
+
+  useEffect(() => {
+    const onBackPress = () => {
+      handleBack();
+      return true;
+    };
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => sub.remove();
+  }, [handleBack]);
 
   const handlePlayPause = useCallback(async () => {
     if (playback.state === 'speaking') {
       await speechOrchestrator.pause();
+      await adService.showInterstitial();
     } else if (playback.state === 'paused') {
-      await speechOrchestrator.resume();
+      await adService.showInterstitialOrContinue(async () => {
+        await speechOrchestrator.resume();
+      });
     } else if (playback.state === 'stopped' || playback.state === 'idle') {
       if (document) {
-        await speechOrchestrator.start(document.id, playback.pageIndex, playback.chunkIndex);
+        await adService.showInterstitialOrContinue(async () => {
+          await speechOrchestrator.start(document.id, playback.pageIndex, playback.chunkIndex);
+        });
       }
     }
   }, [playback.state, playback.pageIndex, playback.chunkIndex, document]);
 
   const handleStop = useCallback(async () => {
     await speechOrchestrator.stop();
-    router.back();
+    await adService.showInterstitialOrContinue(() => {
+      router.back();
+    });
   }, [router]);
 
   const handlePrev = useCallback(async () => {
@@ -401,6 +442,16 @@ export default function ListeningScreen() {
           </Text>
         </View>
       </View>
+
+      {/* Background Playback / Stop Confirmation Modal */}
+      <BackgroundPlaybackExitModal
+        visible={showExitModal}
+        documentTitle={displayTitle}
+        isPlaying={isPlaying}
+        onContinueInBackground={handleContinueInBackground}
+        onStopAndExit={handleStopAndExit}
+        onCancel={() => setShowExitModal(false)}
+      />
     </SafeAreaView>
   );
 }

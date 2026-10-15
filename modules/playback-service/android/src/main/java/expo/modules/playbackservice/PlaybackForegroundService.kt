@@ -51,7 +51,6 @@ class PlaybackForegroundService : Service(), AudioManager.OnAudioFocusChangeList
     super.onCreate()
     createNotificationChannel()
     audioManager = getSystemService(Context.AUDIO_SERVICE) as? AudioManager
-    requestAudioFocus()
   }
 
   private fun acquireWakeLock() {
@@ -87,8 +86,10 @@ class PlaybackForegroundService : Service(), AudioManager.OnAudioFocusChangeList
         currentIsPlaying = intent.getBooleanExtra(EXTRA_IS_PLAYING, true)
         if (currentIsPlaying) {
           acquireWakeLock()
+          requestAudioFocus()
         } else {
           releaseWakeLock()
+          abandonAudioFocus()
         }
         startForegroundWithNotification()
       }
@@ -98,8 +99,10 @@ class PlaybackForegroundService : Service(), AudioManager.OnAudioFocusChangeList
         currentIsPlaying = intent.getBooleanExtra(EXTRA_IS_PLAYING, currentIsPlaying)
         if (currentIsPlaying) {
           acquireWakeLock()
+          requestAudioFocus()
         } else {
           releaseWakeLock()
+          abandonAudioFocus()
         }
         val notification = buildNotification()
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -120,6 +123,7 @@ class PlaybackForegroundService : Service(), AudioManager.OnAudioFocusChangeList
       ACTION_NOTIFICATION_PLAY -> {
         currentIsPlaying = true
         acquireWakeLock()
+        requestAudioFocus()
         actionListener?.invoke("play")
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.notify(NOTIFICATION_ID, buildNotification())
@@ -127,6 +131,7 @@ class PlaybackForegroundService : Service(), AudioManager.OnAudioFocusChangeList
       ACTION_NOTIFICATION_PAUSE -> {
         currentIsPlaying = false
         releaseWakeLock()
+        abandonAudioFocus()
         actionListener?.invoke("pause")
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.notify(NOTIFICATION_ID, buildNotification())
@@ -298,8 +303,8 @@ class PlaybackForegroundService : Service(), AudioManager.OnAudioFocusChangeList
         actionListener?.invoke("pause")
       }
       AudioManager.AUDIOFOCUS_GAIN -> {
-        acquireWakeLock()
-        actionListener?.invoke("play")
+        // Do NOT automatically resume playback on audio focus gain.
+        // User must explicitly tap the play button to resume.
       }
       AudioManager.AUDIOFOCUS_LOSS -> {
         releaseWakeLock()

@@ -14,6 +14,7 @@ import {
   ScrollView,
   Modal,
   FlatList,
+  Switch,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -23,6 +24,7 @@ import { formatRate } from '../src/utils/formatters';
 import { SPEED_PRESETS, SpeechVoice } from '../src/domain/speech/types';
 import { defaultSpeechEngine } from '../src/infrastructure/native/SpeechEngine';
 import { speechOrchestrator } from '../src/application/SpeechOrchestrator';
+import { adService } from '../src/application/AdService';
 
 export default function SettingsScreen() {
   const theme = useTheme();
@@ -34,6 +36,7 @@ export default function SettingsScreen() {
 
   const [voices, setVoices] = useState<SpeechVoice[]>([]);
   const [showVoiceModal, setShowVoiceModal] = useState(false);
+  const [previewingVoiceId, setPreviewingVoiceId] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadVoices() {
@@ -45,9 +48,14 @@ export default function SettingsScreen() {
       }
     }
     loadVoices();
+
+    return () => {
+      defaultSpeechEngine.stop().catch(() => {});
+    };
   }, []);
 
   const handleBack = useCallback(() => {
+    defaultSpeechEngine.stop().catch(() => {});
     router.back();
   }, [router]);
 
@@ -59,11 +67,47 @@ export default function SettingsScreen() {
     [setRate]
   );
 
+  const handlePreviewVoice = useCallback(
+    async (voiceId: string) => {
+      const voiceKey = voiceId || 'system_default';
+      try {
+        if (previewingVoiceId === voiceKey) {
+          await defaultSpeechEngine.stop();
+          setPreviewingVoiceId(null);
+          return;
+        }
+
+        // If a document is currently playing in background, pause it
+        if (usePlaybackStore.getState().state === 'speaking') {
+          await speechOrchestrator.pause();
+        }
+
+        await defaultSpeechEngine.stop();
+        setPreviewingVoiceId(voiceKey);
+
+        const sampleText =
+          'Hello! This is a preview of this voice for reading your documents and books.';
+        await defaultSpeechEngine.speak(sampleText, {
+          voiceId: voiceId && voiceId !== 'system_default' ? voiceId : undefined,
+          rate: rate || 1.0,
+        });
+        setPreviewingVoiceId(null);
+      } catch (e) {
+        console.warn('Voice preview error:', e);
+        setPreviewingVoiceId(null);
+      }
+    },
+    [previewingVoiceId, rate]
+  );
+
   const handleSelectVoice = useCallback(
     async (voiceId: string) => {
+      await defaultSpeechEngine.stop();
+      setPreviewingVoiceId(null);
       setVoice(voiceId);
       setShowVoiceModal(false);
       await speechOrchestrator.setVoice(voiceId);
+      await adService.showInterstitial();
     },
     [setVoice]
   );
@@ -227,20 +271,186 @@ export default function SettingsScreen() {
               },
             ]}
           >
+            {/* Dark Mode Switch Toggle */}
             <View style={styles.settingRow}>
-              <Text
-                style={[styles.rowLabel, { color: theme.colors.textPrimary }]}
-              >
-                Theme
-              </Text>
-              <Text
-                style={[
-                  styles.rowValueMuted,
-                  { color: theme.colors.textSecondary },
-                ]}
-              >
-                System automatic
-              </Text>
+              <View style={styles.themeLabelContainer}>
+                <Text
+                  style={[styles.rowLabel, { color: theme.colors.textPrimary }]}
+                >
+                  Dark Mode
+                </Text>
+                <Text
+                  style={[
+                    theme.typography.caption,
+                    { color: theme.colors.textSecondary, marginTop: 2 },
+                  ]}
+                >
+                  {theme.mode === 'dark'
+                    ? 'Dark theme active'
+                    : 'Light theme active (default)'}
+                </Text>
+              </View>
+
+              <Switch
+                value={theme.mode === 'dark'}
+                onValueChange={(isDark) =>
+                  theme.setThemeMode(isDark ? 'dark' : 'light')
+                }
+                trackColor={{
+                  false: theme.colors.divider,
+                  true: theme.colors.accent,
+                }}
+                thumbColor="#FFFFFF"
+                accessibilityLabel="Toggle Dark Mode"
+              />
+            </View>
+          </View>
+        </View>
+
+        {/* Supported file types section */}
+        <View style={styles.section}>
+          <Text
+            style={[
+              styles.sectionHeader,
+              { color: theme.colors.textSecondary },
+            ]}
+          >
+            SUPPORTED FILE TYPES
+          </Text>
+
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.divider,
+              },
+            ]}
+          >
+            {/* PDF */}
+            <View style={styles.settingRow}>
+              <View style={styles.formatItemLeft}>
+                <View
+                  style={[
+                    styles.formatIconCircle,
+                    { backgroundColor: theme.colors.accentSoft },
+                  ]}
+                >
+                  <Text style={[styles.formatIconText, { color: theme.colors.accent }]}>
+                    PDF
+                  </Text>
+                </View>
+                <View style={styles.formatInfoText}>
+                  <Text style={[styles.rowLabel, { color: theme.colors.textPrimary }]}>
+                    PDF Documents (.pdf)
+                  </Text>
+                  <Text
+                    style={[
+                      theme.typography.caption,
+                      { color: theme.colors.textSecondary, marginTop: 2 },
+                    ]}
+                  >
+                    Ebooks, papers, reports & scanned pages
+                  </Text>
+                </View>
+              </View>
+              <Text style={[styles.badgeCheck, { color: theme.colors.accent }]}>✓ Ready</Text>
+            </View>
+
+            <View style={[styles.separator, { backgroundColor: theme.colors.divider }]} />
+
+            {/* EPUB */}
+            <View style={styles.settingRow}>
+              <View style={styles.formatItemLeft}>
+                <View
+                  style={[
+                    styles.formatIconCircle,
+                    { backgroundColor: theme.colors.accentSoft },
+                  ]}
+                >
+                  <Text style={[styles.formatIconText, { color: theme.colors.accent }]}>
+                    EPUB
+                  </Text>
+                </View>
+                <View style={styles.formatInfoText}>
+                  <Text style={[styles.rowLabel, { color: theme.colors.textPrimary }]}>
+                    EPUB Ebooks (.epub)
+                  </Text>
+                  <Text
+                    style={[
+                      theme.typography.caption,
+                      { color: theme.colors.textSecondary, marginTop: 2 },
+                    ]}
+                  >
+                    Reflowable digital books & publications
+                  </Text>
+                </View>
+              </View>
+              <Text style={[styles.badgeCheck, { color: theme.colors.accent }]}>✓ Ready</Text>
+            </View>
+
+            <View style={[styles.separator, { backgroundColor: theme.colors.divider }]} />
+
+            {/* TXT */}
+            <View style={styles.settingRow}>
+              <View style={styles.formatItemLeft}>
+                <View
+                  style={[
+                    styles.formatIconCircle,
+                    { backgroundColor: theme.colors.accentSoft },
+                  ]}
+                >
+                  <Text style={[styles.formatIconText, { color: theme.colors.accent }]}>
+                    TXT
+                  </Text>
+                </View>
+                <View style={styles.formatInfoText}>
+                  <Text style={[styles.rowLabel, { color: theme.colors.textPrimary }]}>
+                    Plain Text (.txt, .text)
+                  </Text>
+                  <Text
+                    style={[
+                      theme.typography.caption,
+                      { color: theme.colors.textSecondary, marginTop: 2 },
+                    ]}
+                  >
+                    Notes, transcripts, articles & raw text
+                  </Text>
+                </View>
+              </View>
+              <Text style={[styles.badgeCheck, { color: theme.colors.accent }]}>✓ Ready</Text>
+            </View>
+
+            <View style={[styles.separator, { backgroundColor: theme.colors.divider }]} />
+
+            {/* Markdown */}
+            <View style={styles.settingRow}>
+              <View style={styles.formatItemLeft}>
+                <View
+                  style={[
+                    styles.formatIconCircle,
+                    { backgroundColor: theme.colors.accentSoft },
+                  ]}
+                >
+                  <Text style={[styles.formatIconText, { color: theme.colors.accent }]}>
+                    MD
+                  </Text>
+                </View>
+                <View style={styles.formatInfoText}>
+                  <Text style={[styles.rowLabel, { color: theme.colors.textPrimary }]}>
+                    Markdown (.md)
+                  </Text>
+                  <Text
+                    style={[
+                      theme.typography.caption,
+                      { color: theme.colors.textSecondary, marginTop: 2 },
+                    ]}
+                  >
+                    Markdown notes, docs & formatted text
+                  </Text>
+                </View>
+              </View>
+              <Text style={[styles.badgeCheck, { color: theme.colors.accent }]}>✓ Ready</Text>
             </View>
           </View>
         </View>
@@ -289,18 +499,6 @@ export default function SettingsScreen() {
               </Text>
             </View>
 
-            <View style={[styles.separator, { backgroundColor: theme.colors.divider }]} />
-
-            <View style={styles.settingRow}>
-              <Text
-                style={[styles.rowLabel, { color: theme.colors.textPrimary }]}
-              >
-                Advertising & Trackers
-              </Text>
-              <Text style={[styles.rowValueSuccess, { color: '#10B981' }]}>
-                None (Zero Tracking)
-              </Text>
-            </View>
           </View>
 
           {/* Guarantee banner box */}
@@ -426,11 +624,12 @@ export default function SettingsScreen() {
               keyExtractor={(item) => item.id || 'system_default'}
               showsVerticalScrollIndicator={true}
               renderItem={({ item }) => {
+                const voiceKey = item.id || 'system_default';
                 const isSelected =
                   (!selectedVoiceId && !item.id) || selectedVoiceId === item.id;
+                const isPreviewing = previewingVoiceId === voiceKey;
                 return (
-                  <TouchableOpacity
-                    onPress={() => handleSelectVoice(item.id)}
+                  <View
                     style={[
                       styles.voiceModalItem,
                       {
@@ -441,7 +640,11 @@ export default function SettingsScreen() {
                       },
                     ]}
                   >
-                    <View style={styles.voiceItemInfo}>
+                    <TouchableOpacity
+                      style={styles.voiceItemInfo}
+                      onPress={() => handleSelectVoice(item.id)}
+                      accessibilityLabel={`Select voice ${item.name}`}
+                    >
                       <Text
                         style={[
                           theme.typography.body,
@@ -465,18 +668,52 @@ export default function SettingsScreen() {
                           {item.locale}
                         </Text>
                       ) : null}
-                    </View>
-                    {isSelected && (
-                      <Text
+                    </TouchableOpacity>
+
+                    <View style={styles.voiceActions}>
+                      <TouchableOpacity
                         style={[
-                          styles.checkmark,
-                          { color: theme.colors.accent },
+                          styles.previewButton,
+                          {
+                            backgroundColor: isPreviewing
+                              ? theme.colors.accent
+                              : theme.colors.surface,
+                            borderColor: theme.colors.accent,
+                          },
                         ]}
+                        onPress={() => handlePreviewVoice(item.id)}
+                        accessibilityLabel={
+                          isPreviewing
+                            ? `Stop previewing ${item.name}`
+                            : `Preview ${item.name}`
+                        }
                       >
-                        ✓
-                      </Text>
-                    )}
-                  </TouchableOpacity>
+                        <Text
+                          style={[
+                            styles.previewButtonText,
+                            {
+                              color: isPreviewing
+                                ? '#FFFFFF'
+                                : theme.colors.accent,
+                            },
+                          ]}
+                        >
+                          {isPreviewing ? '❚❚ Stop' : '▶ Preview'}
+                        </Text>
+                      </TouchableOpacity>
+
+                      {isSelected && (
+                        <Text
+                          style={[
+                            styles.checkmark,
+                            { color: theme.colors.accent },
+                          ]}
+                        >
+                          ✓
+                        </Text>
+                      )}
+                    </View>
+                  </View>
                 );
               }}
               contentContainerStyle={styles.voiceListContent}
@@ -663,5 +900,52 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     marginLeft: 12,
+  },
+  themeLabelContainer: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  voiceActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  previewButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    minHeight: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  previewButtonText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  formatItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+    paddingRight: 8,
+  },
+  formatIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  formatIconText: {
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  formatInfoText: {
+    flex: 1,
+  },
+  badgeCheck: {
+    fontSize: 12,
+    fontWeight: '700',
   },
 });

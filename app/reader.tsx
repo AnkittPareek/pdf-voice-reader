@@ -22,6 +22,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Dimensions,
+  BackHandler,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -38,8 +39,8 @@ import { speechOrchestrator } from '../src/application/SpeechOrchestrator';
 import { ReaderService } from '../src/application/ReaderService';
 import { formatRate, getDocumentDisplayName } from '../src/utils/formatters';
 import { PlayIcon, PauseIcon, PrevTrackIcon, NextTrackIcon, ExpandIcon, StopIcon } from '../src/components/AudioIcons/AudioIcons';
-import { InterstitialAdModal } from '../src/components/Ads/InterstitialAdModal';
-import { adService, ADMOB_CONFIG } from '../src/application/AdService';
+import { adService } from '../src/application/AdService';
+import { BackgroundPlaybackExitModal } from '../src/components/Modals/BackgroundPlaybackExitModal';
 
 export default function ReaderScreen() {
   const theme = useTheme();
@@ -226,29 +227,64 @@ export default function ReaderScreen() {
     }
   }, [playback.chunkIndex, playback.pageIndex, isSpeechActive, playback.documentId, documentId, currentPageIndex, viewMode]);
 
-  const [showInterstitial, setShowInterstitial] = useState(false);
-  const sessionStartRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    sessionStartRef.current = Date.now();
-  }, []);
+  const [showExitModal, setShowExitModal] = useState(false);
+  const pdfPagesScrollRef = useRef<ScrollView>(null);
 
   const handleBack = useCallback(() => {
-    const readingTime = sessionStartRef.current ? Date.now() - sessionStartRef.current : 0;
-    if (
-      readingTime >= ADMOB_CONFIG.MIN_READING_DURATION_FOR_AD_MS &&
-      adService.canShowInterstitial()
-    ) {
-      setShowInterstitial(true);
+    // If audio is actively speaking or paused, ask user: hear in background or stop playing
+    if (playback.state === 'speaking' || playback.state === 'paused') {
+      setShowExitModal(true);
       return;
     }
+
+    adService.showInterstitialOrContinue(() => {
+      router.back();
+    });
+  }, [playback.state, router]);
+
+  const handleContinueInBackground = useCallback(() => {
+    setShowExitModal(false);
     router.back();
   }, [router]);
 
-  const handleCloseInterstitial = useCallback(() => {
-    setShowInterstitial(false);
-    router.back();
+  const handleStopAndExit = useCallback(async () => {
+    setShowExitModal(false);
+    await speechOrchestrator.stop();
+    await adService.showInterstitialOrContinue(() => {
+      router.back();
+    });
   }, [router]);
+
+  useEffect(() => {
+    const onBackPress = () => {
+      handleBack();
+      return true;
+    };
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => sub.remove();
+  }, [handleBack]);
+
+  // Auto-scroll PDF top bar when page changes
+  useEffect(() => {
+    if (viewMode === 'pdf' && pdfPagesScrollRef.current) {
+      pdfPagesScrollRef.current.scrollTo({
+        x: Math.max(0, currentPageIndex * 68 - 80),
+        animated: true,
+      });
+    }
+  }, [currentPageIndex, viewMode]);
+
+  const handleSwitchToPdfView = useCallback(() => {
+    // Also open the one being read when user opens PDF view
+    if (
+      playback.documentId === document?.id &&
+      playback.pageIndex !== undefined &&
+      (playback.state === 'speaking' || playback.state === 'paused')
+    ) {
+      setCurrentPageIndex(playback.pageIndex);
+    }
+    setViewMode('pdf');
+  }, [playback.documentId, playback.pageIndex, playback.state, document]);
 
   const handlePrevPage = useCallback(async () => {
     if (currentPageIndex > 0) {
@@ -271,13 +307,19 @@ export default function ReaderScreen() {
     }
   }, [currentPageIndex, isSpeechActive, document]);
 
-  // ReadEra: Tap any chunk/sentence to read from here
+  // ReadEra: Tap any chunk, sentence, or word to read from here
   const handleChunkPress = useCallback(
-    async (chunkIndex: number) => {
+    async (chunkIndex: number, charOffset = 0) => {
       if (!document) return;
-      await speechOrchestrator.jumpToChunk(currentPageIndex, chunkIndex, document.id);
+      if (playback.state !== 'speaking' && playback.state !== 'paused') {
+        await adService.showInterstitialOrContinue(async () => {
+          await speechOrchestrator.jumpToPosition(currentPageIndex, chunkIndex, charOffset, document.id);
+        });
+      } else {
+        await speechOrchestrator.jumpToPosition(currentPageIndex, chunkIndex, charOffset, document.id);
+      }
     },
-    [document, currentPageIndex]
+    [document, currentPageIndex, playback.state]
   );
 
   // Toggle play/pause or start speech in reader
@@ -286,16 +328,21 @@ export default function ReaderScreen() {
 
     if (playback.state === 'speaking') {
       await speechOrchestrator.pause();
+      await adService.showInterstitial();
       return;
     }
 
     if (playback.state === 'paused') {
-      await speechOrchestrator.resume();
+      await adService.showInterstitialOrContinue(async () => {
+        await speechOrchestrator.resume();
+      });
       return;
     }
 
-    // Start reading out loud right here in reader
-    await speechOrchestrator.start(document.id, currentPageIndex, 0);
+    // Start reading out loud: user will first see an ad
+    await adService.showInterstitialOrContinue(async () => {
+      await speechOrchestrator.start(document.id, currentPageIndex, 0);
+    });
   }, [document, playback.state, currentPageIndex]);
 
   const handlePrevChunk = useCallback(async () => {
@@ -312,6 +359,7 @@ export default function ReaderScreen() {
 
   const handleStopSpeech = useCallback(async () => {
     await speechOrchestrator.stop();
+    await adService.showInterstitial();
   }, []);
 
   const handleOpenFullscreenListening = useCallback(() => {
@@ -454,7 +502,7 @@ export default function ReaderScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => setViewMode('pdf')}
+              onPress={handleSwitchToPdfView}
               style={[
                 styles.modeTab,
                 viewMode === 'pdf' && { backgroundColor: theme.colors.accent },
@@ -536,7 +584,7 @@ export default function ReaderScreen() {
                       </View>
                     )}
 
-                    {/* Word-level highlight inside active chunk if available */}
+                    {/* Word-level interactive text with real-time tracking */}
                     {isCurrentChunk &&
                     playback.currentRange &&
                     playback.currentRange.end > playback.currentRange.start ? (
@@ -547,6 +595,11 @@ export default function ReaderScreen() {
                         const before = chunk.text.slice(0, safeStart);
                         const activeWord = chunk.text.slice(safeStart, safeEnd);
                         const after = chunk.text.slice(safeEnd);
+
+                        const beforeTokens = before.split(/(\s+)/);
+                        let bOffset = 0;
+                        const afterTokens = after.split(/(\s+)/);
+                        let aOffset = safeEnd;
 
                         return (
                           <Text
@@ -559,7 +612,19 @@ export default function ReaderScreen() {
                               },
                             ]}
                           >
-                            {before}
+                            {beforeTokens.map((tok, tIdx) => {
+                              const tokPos = bOffset;
+                              bOffset += tok.length;
+                              if (/^\s+$/.test(tok)) return <Text key={`b_${tIdx}`}>{tok}</Text>;
+                              return (
+                                <Text
+                                  key={`b_${tIdx}`}
+                                  onPress={() => handleChunkPress(index, tokPos)}
+                                >
+                                  {tok}
+                                </Text>
+                              );
+                            })}
                             <Text
                               style={[
                                 styles.activeWordHighlight,
@@ -568,10 +633,23 @@ export default function ReaderScreen() {
                                   color: '#FFFFFF',
                                 },
                               ]}
+                              onPress={() => handleChunkPress(index, safeStart)}
                             >
                               {activeWord}
                             </Text>
-                            {after}
+                            {afterTokens.map((tok, tIdx) => {
+                              const tokPos = aOffset;
+                              aOffset += tok.length;
+                              if (/^\s+$/.test(tok)) return <Text key={`a_${tIdx}`}>{tok}</Text>;
+                              return (
+                                <Text
+                                  key={`a_${tIdx}`}
+                                  onPress={() => handleChunkPress(index, tokPos)}
+                                >
+                                  {tok}
+                                </Text>
+                              );
+                            })}
                           </Text>
                         );
                       })()
@@ -582,14 +660,30 @@ export default function ReaderScreen() {
                           {
                             fontSize,
                             lineHeight: Math.round(fontSize * 1.6),
-                            color: isCurrentChunk
-                              ? theme.colors.textPrimary
-                              : theme.colors.textPrimary,
+                            color: theme.colors.textPrimary,
                             fontWeight: isCurrentChunk ? '600' : '400',
                           },
                         ]}
                       >
-                        {chunk.text}
+                        {(() => {
+                          const tokens = chunk.text.split(/(\s+)/);
+                          let charCount = 0;
+                          return tokens.map((token, tIdx) => {
+                            const tokenOffset = charCount;
+                            charCount += token.length;
+                            if (/^\s+$/.test(token)) {
+                              return <Text key={`tok_${tIdx}`}>{token}</Text>;
+                            }
+                            return (
+                              <Text
+                                key={`tok_${tIdx}`}
+                                onPress={() => handleChunkPress(index, tokenOffset)}
+                              >
+                                {token}
+                              </Text>
+                            );
+                          });
+                        })()}
                       </Text>
                     )}
                   </TouchableOpacity>
@@ -622,80 +716,147 @@ export default function ReaderScreen() {
             )}
           </ScrollView>
         ) : (
-          // ORIGINAL PDF PAGE VIEW
-          <View
-            style={[
-              styles.pdfContainer,
-              {
-                backgroundColor: theme.colors.surface,
-                borderColor: theme.colors.divider,
-              },
-            ]}
-          >
-            {isPageRendering && (
-              <View style={styles.renderingOverlay}>
-                <ActivityIndicator size="small" color={theme.colors.accent} />
-              </View>
-            )}
-
-            {pageImageUri ? (
-              <Image
-                source={{ uri: pageImageUri }}
-                style={styles.pdfImage}
-                resizeMode="contain"
-              />
-            ) : (
-              <View style={styles.pdfPlaceholder}>
-                <Text
-                  style={[
-                    theme.typography.secondary,
-                    { color: theme.colors.textSecondary, textAlign: 'center' },
-                  ]}
-                >
-                  Page {displayPageNumber}
-                </Text>
-              </View>
-            )}
-
-            {/* ReadEra floating banner when reading in PDF mode */}
-            {isCurrentPageSpeaking && isSpeechActive && (
-              <TouchableOpacity
-                activeOpacity={0.9}
-                onPress={() => setViewMode('text')}
+          // ORIGINAL PDF PAGE VIEW WITH TOP SCROLLABLE PAGE SELECTOR
+          <View style={styles.pdfViewWrapper}>
+            {/* Top horizontal page bar */}
+            {pageCount > 0 && (
+              <View
                 style={[
-                  styles.floatingPdfAudioCard,
+                  styles.pdfTopBar,
                   {
                     backgroundColor: theme.colors.surface,
-                    borderColor: theme.colors.accent,
+                    borderColor: theme.colors.divider,
                   },
                 ]}
               >
-                <View style={styles.floatingAudioHeader}>
-                  <View
+                <ScrollView
+                  ref={pdfPagesScrollRef}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.pdfPagesScrollContent}
+                >
+                  {Array.from({ length: pageCount }).map((_, idx) => {
+                    const isSelectedPage = idx === currentPageIndex;
+                    const isReadingThisPage =
+                      isDocActive &&
+                      (playback.state === 'speaking' || playback.state === 'paused') &&
+                      playback.pageIndex === idx;
+
+                    return (
+                      <TouchableOpacity
+                        key={idx}
+                        onPress={() => setCurrentPageIndex(idx)}
+                        style={[
+                          styles.pageChip,
+                          {
+                            backgroundColor: isSelectedPage
+                              ? theme.colors.accent
+                              : theme.colors.background,
+                            borderColor: isSelectedPage
+                              ? theme.colors.accent
+                              : theme.colors.divider,
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.pageChipText,
+                            {
+                              color: isSelectedPage
+                                ? '#FFFFFF'
+                                : theme.colors.textPrimary,
+                              fontWeight: isSelectedPage ? '700' : '500',
+                            },
+                          ]}
+                        >
+                          P. {idx + 1}
+                        </Text>
+                        {isReadingThisPage && (
+                          <View style={styles.readingPageBadge}>
+                            <Text style={styles.readingPageBadgeText}>🎧</Text>
+                          </View>
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            )}
+
+            <View
+              style={[
+                styles.pdfContainer,
+                {
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.colors.divider,
+                },
+              ]}
+            >
+              {isPageRendering && (
+                <View style={styles.renderingOverlay}>
+                  <ActivityIndicator size="small" color={theme.colors.accent} />
+                </View>
+              )}
+
+              {pageImageUri ? (
+                <Image
+                  source={{ uri: pageImageUri }}
+                  style={styles.pdfImage}
+                  resizeMode="contain"
+                />
+              ) : (
+                <View style={styles.pdfPlaceholder}>
+                  <Text
                     style={[
-                      styles.speakingPill,
-                      { backgroundColor: theme.colors.accent },
+                      theme.typography.secondary,
+                      { color: theme.colors.textSecondary, textAlign: 'center' },
                     ]}
                   >
-                    <Text style={styles.speakingPillText}>
-                      {isPlaying ? '● READING' : '❚❚ PAUSED'}
-                    </Text>
-                  </View>
-                  <Text style={[styles.floatingActionText, { color: theme.colors.accent }]}>
-                    Switch to Text view ›
+                    Page {displayPageNumber}
                   </Text>
                 </View>
-                <Text
+              )}
+
+              {/* ReadEra floating banner when reading in PDF mode */}
+              {isCurrentPageSpeaking && isSpeechActive && (
+                <TouchableOpacity
+                  activeOpacity={0.9}
+                  onPress={() => setViewMode('text')}
                   style={[
-                    theme.typography.body,
-                    { color: theme.colors.textPrimary, fontWeight: '500' },
+                    styles.floatingPdfAudioCard,
+                    {
+                      backgroundColor: theme.colors.surface,
+                      borderColor: theme.colors.accent,
+                    },
                   ]}
-                  numberOfLines={2}
                 >
-                  &ldquo;{playback.currentText}&rdquo;
-                </Text>
-              </TouchableOpacity>
-            )}
+                  <View style={styles.floatingAudioHeader}>
+                    <View
+                      style={[
+                        styles.speakingPill,
+                        { backgroundColor: theme.colors.accent },
+                      ]}
+                    >
+                      <Text style={styles.speakingPillText}>
+                        {isPlaying ? '● READING' : '❚❚ PAUSED'}
+                      </Text>
+                    </View>
+                    <Text style={[styles.floatingActionText, { color: theme.colors.accent }]}>
+                      Switch to Text view ›
+                    </Text>
+                  </View>
+                  <Text
+                    style={[
+                      theme.typography.body,
+                      { color: theme.colors.textPrimary, fontWeight: '500' },
+                    ]}
+                    numberOfLines={2}
+                  >
+                    &ldquo;{playback.currentText}&rdquo;
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
         )}
 
@@ -903,10 +1064,14 @@ export default function ReaderScreen() {
         )}
       </View>
 
-      {/* Natural Break Interstitial on Exit */}
-      <InterstitialAdModal
-        visible={showInterstitial}
-        onClose={handleCloseInterstitial}
+      {/* Background Playback / Stop Confirmation Modal */}
+      <BackgroundPlaybackExitModal
+        visible={showExitModal}
+        documentTitle={document ? getDocumentDisplayName(document.title, document.fileName) : undefined}
+        isPlaying={isPlaying}
+        onContinueInBackground={handleContinueInBackground}
+        onStopAndExit={handleStopAndExit}
+        onCancel={() => setShowExitModal(false)}
       />
     </SafeAreaView>
   );
@@ -1166,5 +1331,37 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 12,
     borderWidth: 1,
+  },
+  pdfViewWrapper: {
+    flex: 1,
+  },
+  pdfTopBar: {
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderBottomWidth: 1,
+  },
+  pdfPagesScrollContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 4,
+  },
+  pageChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  pageChipText: {
+    fontSize: 12,
+  },
+  readingPageBadge: {
+    marginLeft: 2,
+  },
+  readingPageBadgeText: {
+    fontSize: 11,
   },
 });

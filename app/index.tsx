@@ -32,12 +32,15 @@ import { generateId } from '../src/utils/formatters';
 import { HAS_SEEN_WELCOME_KEY } from './welcome';
 import { BannerAdView } from '../src/components/Ads/BannerAdView';
 import { RewardedAdModal } from '../src/components/Ads/RewardedAdModal';
+import { HomeAudioPlayer } from '../src/components/HomeAudioPlayer/HomeAudioPlayer';
 import { adService } from '../src/application/AdService';
+import { usePlaybackStore } from '../src/state/playbackStore';
+import { speechOrchestrator } from '../src/application/SpeechOrchestrator';
 
 export default function LibraryScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const { documents, loadDocuments, addDocument } = useLibraryStore();
+  const { documents, loadDocuments, addDocument, removeDocument } = useLibraryStore();
   const [showRewardedModal, setShowRewardedModal] = useState(false);
   const [isAdFree, setIsAdFree] = useState(false);
 
@@ -76,8 +79,7 @@ export default function LibraryScreen() {
           'application/pdf',
           'application/epub+zip',
           'text/plain',
-          'text/*',
-          '*/*',
+          'text/markdown',
         ],
         copyToCacheDirectory: true,
       });
@@ -85,6 +87,24 @@ export default function LibraryScreen() {
       if (result.canceled || !result.assets?.length) return;
 
       const asset = result.assets[0];
+      const lowerName = (asset.name || '').toLowerCase();
+      const validExtensions = ['.pdf', '.epub', '.txt', '.text', '.md'];
+      const hasValidExt = validExtensions.some((ext) => lowerName.endsWith(ext));
+      const validMimeTypes = [
+        'application/pdf',
+        'application/epub+zip',
+        'text/plain',
+        'text/markdown',
+      ];
+      const hasValidMime = asset.mimeType ? validMimeTypes.includes(asset.mimeType) : false;
+
+      if (!hasValidExt && !hasValidMime) {
+        Alert.alert(
+          'Unsupported Document Type',
+          'Please select a readable document format: PDF (.pdf), EPUB ebook (.epub), or text file (.txt, .md).'
+        );
+        return;
+      }
       const doc: Document = {
         id: generateId(),
         uri: asset.uri,
@@ -113,6 +133,29 @@ export default function LibraryScreen() {
       router.push({ pathname: '/reader', params: { documentId: doc.id } });
     },
     [router]
+  );
+
+  const handleDeleteDocument = useCallback(
+    (doc: Document) => {
+      Alert.alert(
+        'Remove Document',
+        `Remove "${doc.fileName || 'this document'}" from your library? Your saved reading position will be cleared.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Remove',
+            style: 'destructive',
+            onPress: async () => {
+              if (usePlaybackStore.getState().documentId === doc.id) {
+                await speechOrchestrator.stop();
+              }
+              await removeDocument(doc.id);
+            },
+          },
+        ]
+      );
+    },
+    [removeDocument]
   );
 
   const handleSettingsPress = useCallback(() => {
@@ -197,7 +240,7 @@ export default function LibraryScreen() {
 
             <TouchableOpacity
               onPress={handleAddPdf}
-              accessibilityLabel="Add a PDF document"
+              accessibilityLabel="Add a PDF or document"
               accessibilityRole="button"
               activeOpacity={0.8}
               style={[styles.addButton, { backgroundColor: theme.colors.accent }]}
@@ -208,9 +251,58 @@ export default function LibraryScreen() {
                   { color: '#FFFFFF', fontWeight: '700' },
                 ]}
               >
-                + Add PDF
+                + Add Document
               </Text>
             </TouchableOpacity>
+
+            {/* Supported formats indicator */}
+            <View style={styles.supportedFormatsContainer}>
+              <Text style={[styles.supportedFormatsLabel, { color: theme.colors.textSecondary }]}>
+                SUPPORTED FORMATS
+              </Text>
+              <View style={styles.formatBadgesRow}>
+                <View
+                  style={[
+                    styles.formatBadge,
+                    { backgroundColor: theme.colors.surface, borderColor: theme.colors.divider },
+                  ]}
+                >
+                  <Text style={[styles.formatBadgeText, { color: theme.colors.accent }]}>
+                    📄 PDF
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    styles.formatBadge,
+                    { backgroundColor: theme.colors.surface, borderColor: theme.colors.divider },
+                  ]}
+                >
+                  <Text style={[styles.formatBadgeText, { color: theme.colors.accent }]}>
+                    📖 EPUB
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    styles.formatBadge,
+                    { backgroundColor: theme.colors.surface, borderColor: theme.colors.divider },
+                  ]}
+                >
+                  <Text style={[styles.formatBadgeText, { color: theme.colors.accent }]}>
+                    📝 TXT
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    styles.formatBadge,
+                    { backgroundColor: theme.colors.surface, borderColor: theme.colors.divider },
+                  ]}
+                >
+                  <Text style={[styles.formatBadgeText, { color: theme.colors.accent }]}>
+                    📋 MD
+                  </Text>
+                </View>
+              </View>
+            </View>
 
             <Text
               style={[
@@ -218,12 +310,12 @@ export default function LibraryScreen() {
                 {
                   color: theme.colors.textSecondary,
                   textAlign: 'center',
-                  marginTop: 16,
+                  marginTop: 14,
                   fontWeight: '500',
                 },
               ]}
             >
-              Your PDFs will appear here.{'\n'}Files stay on your device.
+              Your documents will appear here.{'\n'}Files stay 100% on your device.
             </Text>
 
             <TouchableOpacity
@@ -259,6 +351,7 @@ export default function LibraryScreen() {
                 <PdfCard
                   document={mostRecent}
                   onPress={handleDocumentPress}
+                  onDelete={handleDeleteDocument}
                   variant="featured"
                 />
               </View>
@@ -285,6 +378,7 @@ export default function LibraryScreen() {
                       key={doc.id}
                       document={doc}
                       onPress={handleDocumentPress}
+                      onDelete={handleDeleteDocument}
                       variant="compact"
                     />
                   ))}
@@ -295,7 +389,7 @@ export default function LibraryScreen() {
             {/* Add PDF button (populated state) */}
             <TouchableOpacity
               onPress={handleAddPdf}
-              accessibilityLabel="Add another PDF"
+              accessibilityLabel="Add another document"
               accessibilityRole="button"
               activeOpacity={0.8}
               style={[
@@ -313,9 +407,16 @@ export default function LibraryScreen() {
                   { color: theme.colors.accent, fontWeight: '700' },
                 ]}
               >
-                Add PDF or Document
+                Add Document
               </Text>
             </TouchableOpacity>
+
+            {/* Supported formats indicator in populated state */}
+            <View style={styles.populatedFormatsRow}>
+              <Text style={[styles.populatedFormatsText, { color: theme.colors.textSecondary }]}>
+                Supported: PDF · EPUB · TXT · MD
+              </Text>
+            </View>
 
             {/* Privacy footer notice */}
             <View style={styles.privacyNoticeContainer}>
@@ -326,6 +427,9 @@ export default function LibraryScreen() {
           </>
         )}
       </ScrollView>
+
+      {/* Persistent Home Screen Audio Player Controls */}
+      <HomeAudioPlayer documents={documents} />
 
       {/* Bottom Library Sponsor Banner */}
       <BannerAdView onPressRemoveAds={() => setShowRewardedModal(true)} />
@@ -458,5 +562,40 @@ const styles = StyleSheet.create({
   privacyNoticeText: {
     fontSize: 12,
     fontWeight: '500',
+  },
+  supportedFormatsContainer: {
+    marginTop: 18,
+    alignItems: 'center',
+    gap: 8,
+  },
+  supportedFormatsLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  formatBadgesRow: {
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+  formatBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  formatBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  populatedFormatsRow: {
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  populatedFormatsText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
 });

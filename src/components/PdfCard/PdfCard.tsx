@@ -20,10 +20,11 @@ import { PlayIcon } from '../AudioIcons/AudioIcons';
 interface PdfCardProps {
   document: Document;
   onPress: (document: Document) => void;
+  onDelete?: (document: Document) => void;
   variant?: 'compact' | 'featured';
 }
 
-export function PdfCard({ document, onPress, variant = 'compact' }: PdfCardProps) {
+export function PdfCard({ document, onPress, onDelete, variant = 'compact' }: PdfCardProps) {
   const theme = useTheme();
 
   const isFeatured = variant === 'featured';
@@ -45,6 +46,7 @@ export function PdfCard({ document, onPress, variant = 'compact' }: PdfCardProps
     return (
       <TouchableOpacity
         onPress={() => onPress(document)}
+        onLongPress={() => onDelete?.(document)}
         accessibilityLabel={accessibilityLabel}
         accessibilityRole="button"
         activeOpacity={0.8}
@@ -56,6 +58,20 @@ export function PdfCard({ document, onPress, variant = 'compact' }: PdfCardProps
           },
         ]}
       >
+        {onDelete && (
+          <TouchableOpacity
+            onPress={(e) => {
+              e.stopPropagation();
+              onDelete(document);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={`Remove ${displayName} from library`}
+            style={[styles.featuredDeleteButton, { borderColor: theme.colors.divider }]}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={[styles.featuredDeleteButtonText, { color: theme.colors.textSecondary }]}>🗑</Text>
+          </TouchableOpacity>
+        )}
         <View style={styles.featuredTopRow}>
           {/* Stylized Book Cover */}
           <View
@@ -131,6 +147,7 @@ export function PdfCard({ document, onPress, variant = 'compact' }: PdfCardProps
   return (
     <TouchableOpacity
       onPress={() => onPress(document)}
+      onLongPress={() => onDelete?.(document)}
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
       activeOpacity={0.75}
@@ -142,6 +159,20 @@ export function PdfCard({ document, onPress, variant = 'compact' }: PdfCardProps
         },
       ]}
     >
+      {onDelete && (
+        <TouchableOpacity
+          onPress={(e) => {
+            e.stopPropagation();
+            onDelete(document);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={`Remove ${displayName} from library`}
+          style={[styles.compactDeleteButton, { borderColor: theme.colors.divider }]}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+        >
+          <Text style={[styles.compactDeleteButtonText, { color: theme.colors.textSecondary }]}>✕</Text>
+        </TouchableOpacity>
+      )}
       <View
         style={[
           styles.compactCover,
@@ -318,5 +349,38 @@ const styles = StyleSheet.create({
   compactMeta: {
     fontSize: 11,
     fontWeight: '500',
+  },
+  featuredDeleteButton: {
+    position: 'absolute',
+    top: 14,
+    right: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+    backgroundColor: 'rgba(0,0,0,0.03)',
+  },
+  featuredDeleteButtonText: {
+    fontSize: 14,
+  },
+  compactDeleteButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+    backgroundColor: 'rgba(0,0,0,0.04)',
+  },
+  compactDeleteButtonText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
 });

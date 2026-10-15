@@ -1,0 +1,81 @@
+PDF VOICE READER - CHANGELOG
+=============================
+
+Date: 2026-10-15
+Release Version: 1.0.3
+
+1. Audio Focus Auto-Resume Bug Fix:
+   - Resolved native issue in PlaybackForegroundService where external audio apps (e.g. Spotify, YouTube, Podcasts) playing and pausing would automatically trigger playback resume in PDF Voice Reader.
+   - Abandoned audio focus on pause. Removed automatic resume on AudioManager.AUDIOFOCUS_GAIN.
+   - Playback now strictly requires manual user action (tapping the play button).
+
+2. Interstitial Ads on Back Press:
+   - Fixed back press navigation in Reader and Fullscreen Listening screens to reliably trigger full-screen interstitial ads.
+   - Handled both top-bar UI back buttons and Android hardware/gesture back events via BackHandler.
+
+3. Action-Triggered Interstitial Ads:
+   - Starting Audio: When user taps "Listen" in Reader or plays audio from a stopped/idle state, an interstitial ad is shown before audio starts.
+   - Pausing Audio: When user pauses speech, playback is paused and an interstitial ad is shown.
+   - Resuming Audio: When user resumes playback, an interstitial ad is shown before playback continues.
+   - Stopping Audio: When user stops speech, playback stops and an interstitial ad is shown.
+   - TTS Voice Selection: When user selects a TTS voice in Settings, the voice changes and an interstitial ad is displayed.
+   - Added `showInterstitialOrContinue()` pipeline in AdService to guarantee smooth continuation of navigation and audio.
+
+4. Settings Screen Privacy Disclosure:
+   - Removed inaccurate "Advertising & Trackers: None (Zero Tracking)" row from Settings screen.
+
+5. Readable Document File Restriction:
+   - Restricted document picker strictly to supported document types (application/pdf, application/epub+zip, text/plain, text/markdown).
+   - Removed generic wildcard (*/*) file picker filter.
+   - Added validation check rejecting unsupported file types with a friendly alert guiding users to select .pdf, .epub, .txt, or .md documents.
+
+6. Background Playback Back Exit Modal:
+   - When the user presses the back button (top UI button or Android hardware/gesture back) while audio is playing or paused, a modal appears asking if they want to "Hear in Background" or "Stop Playing".
+   - If the user selects "Hear in Background", audio continues in the background and the screen exits without showing an ad.
+   - If the user selects "Stop Playing", speech audio is halted and an interstitial ad is displayed before exiting.
+
+7. Remove Files from Library:
+   - Added a delete button (trash icon) to both featured and standard document cards in the Library.
+   - Added long-press gesture support to trigger the delete confirmation.
+   - Prompts the user with a native confirmation alert before deleting.
+   - Cleans up document metadata from SQLite and automatically halts playback if the removed document was currently playing.
+
+8. Interactive Word-Level & Paragraph Tap-to-Read:
+   - Fixed paragraph tapping to resume reading from that paragraph.
+   - Implemented tokenized word-level interactive touch targets in the Ebook/Text view: tapping any individual word starts reading aloud directly from that exact word.
+   - Added custom character offset slicing and start-position synchronization in SpeechOrchestrator (`jumpToPosition`).
+
+9. Full PDF View with Top Scrollable Page Selector:
+   - Opening PDF view automatically jumps to the page currently being read out loud.
+   - Added a horizontal scrollable bar of page chips at the top of the PDF view.
+   - Clearly marks the selected page and displays a 🎧 reading badge on the page currently being read by TTS.
+   - Tapping any page chip immediately navigates to that page in the PDF reader.
+
+10. Persistent Home Screen Audio Player Controls:
+    - Added a mini-player controller directly to the Home / Library screen tagged to the active or most recent document.
+    - Displays document title, reading page status, and controls: Previous Track, Play/Pause, Next Track, and Stop.
+    - If no document is active or library is empty, gracefully disables controls with contextual guidance ("Tap any PDF to start reading" or "Add a PDF to start reading").
+
+11. Light Mode Default & Dark Mode Toggle:
+    - Configured Light Mode as the default visual appearance of the app.
+    - Added an interactive Dark Mode toggle switch and segmented mode selector (☀️ Light Mode vs 🌙 Dark Mode) to the Appearance section in Settings.
+    - Persisted the user's theme selection across app restarts via AsyncStorage.
+
+13. Interactive TTS Voice Previews:
+    - Added dedicated live audio preview buttons (▶ Preview / ❚❚ Stop) to both the Settings voice picker modal and the First-Time Onboarding wizard.
+    - Allows users to listen to live spoken audio from any installed native TTS voice before selecting.
+    - Preview audio plays without triggering ads; confirming voice selection triggers an interstitial ad.
+
+14. Engaging Multi-Step First-Time Setup Walkthrough:
+    - Revamped app/welcome.tsx into a 4-step interactive setup wizard:
+      * Step 1 (Appearance): Interactive Light Mode (Default) and Dark Mode cards with real-time live UI theme updates.
+      * Step 2 (TTS Voice Selection): Interactive list of installed native voices with live audio previews and radio selection.
+      * Step 3 (Default Reading Speed): Speed preset chips (0.75x to 2.0x) paired with an interactive "🔊 Test Speed Sample" audio sample button.
+      * Step 4 (Supported Documents & Privacy): Comprehensive overview of supported formats (.pdf, .epub, .txt, .md) and 100% on-device offline guarantees.
+
+15. Settings Appearance UI Simplification:
+    - Cleaned up the Appearance section in Settings by removing redundant segmented pill buttons.
+    - Retained the clean, standard Dark Mode switch toggle.
+
+
+

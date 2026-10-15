@@ -33,37 +33,25 @@ describe('AdService Monetization & Protection Tests', () => {
     await adService.initialize();
   });
 
-  it('should not allow interstitials while speech playback is active', async () => {
-    // When stopped or idle, eligible for interstitial if cooldown elapsed
+  it('should allow interstitials across user triggers when not ad-free', async () => {
+    // When idle or stopped, interstitial is allowed
     usePlaybackStore.getState().setState('stopped');
     expect(adService.canShowInterstitial()).toBe(true);
 
-    // CRITICAL: When speaking, must NEVER allow interstitial
+    // Interstitial is allowed on audio triggers (start, pause, resume, stop)
     usePlaybackStore.getState().setState('speaking');
-    expect(adService.canShowInterstitial()).toBe(false);
+    expect(adService.canShowInterstitial()).toBe(true);
 
-    // CRITICAL: When paused in background, must NEVER allow interstitial
     usePlaybackStore.getState().setState('paused');
-    expect(adService.canShowInterstitial()).toBe(false);
-
-    // CRITICAL: When loading next chunk, must NEVER allow interstitial
-    usePlaybackStore.getState().setState('loading');
-    expect(adService.canShowInterstitial()).toBe(false);
-
-    // Once completed/stopped, can be eligible again
-    usePlaybackStore.getState().setState('completed');
     expect(adService.canShowInterstitial()).toBe(true);
   });
 
-  it('should enforce 8-minute cooldown between interstitials', async () => {
-    usePlaybackStore.getState().setState('stopped');
-    expect(adService.canShowInterstitial()).toBe(true);
-
-    // Record an interstitial display
-    await adService.recordInterstitialShown();
-
-    // Immediately after, interstitial MUST be blocked by cooldown
-    expect(adService.canShowInterstitial()).toBe(false);
+  it('should execute continuation callback in showInterstitialOrContinue', async () => {
+    let continued = false;
+    await adService.showInterstitialOrContinue(() => {
+      continued = true;
+    });
+    expect(continued).toBe(true);
   });
 
   it('should grant ad-free status and block all ads', async () => {

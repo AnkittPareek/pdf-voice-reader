@@ -2,16 +2,19 @@
  * PDF Voice Reader — Theme System
  *
  * Provides a React context-based theme with light/dark mode support.
- * Uses system preference by default (userInterfaceStyle: "automatic" in app.json).
+ * Default view of the app is Light mode.
+ * Supports persistent runtime theme toggling between Light and Dark mode.
  */
 
-import React, { createContext, useContext, useMemo } from 'react';
-import { useColorScheme } from 'react-native';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { lightColors, darkColors, type ColorTokens } from './colors';
 import { typography, type TypographyTokens } from './typography';
 import { spacing, radii, type SpacingTokens } from './spacing';
 
-export type ThemeMode = 'light' | 'dark' | 'system';
+export const THEME_STORAGE_KEY = '@pdf_voice_theme_mode';
+
+export type ThemeMode = 'light' | 'dark';
 
 export interface Theme {
   mode: 'light' | 'dark';
@@ -19,19 +22,28 @@ export interface Theme {
   typography: TypographyTokens;
   spacing: SpacingTokens;
   radii: typeof radii;
+  setThemeMode: (mode: 'light' | 'dark') => void;
+  toggleTheme: () => void;
 }
 
-function createTheme(mode: 'light' | 'dark'): Theme {
+function createTheme(
+  mode: 'light' | 'dark',
+  setThemeMode: (m: 'light' | 'dark') => void = () => {},
+  toggleTheme: () => void = () => {}
+): Theme {
   return {
     mode,
     colors: mode === 'dark' ? darkColors : lightColors,
     typography,
     spacing,
     radii,
+    setThemeMode,
+    toggleTheme,
   };
 }
 
-const ThemeContext = createContext<Theme>(createTheme('light'));
+const defaultTheme = createTheme('light');
+const ThemeContext = createContext<Theme>(defaultTheme);
 
 interface ThemeProviderProps {
   children: React.ReactNode;
@@ -39,10 +51,43 @@ interface ThemeProviderProps {
 }
 
 export function ThemeProvider({ children, forcedMode }: ThemeProviderProps) {
-  const systemScheme = useColorScheme();
-  const resolvedMode = forcedMode ?? (systemScheme === 'dark' ? 'dark' : 'light');
+  // Default view of app is light mode
+  const [persistedMode, setPersistedMode] = useState<'light' | 'dark'>('light');
 
-  const theme = useMemo(() => createTheme(resolvedMode), [resolvedMode]);
+  useEffect(() => {
+    let isMounted = true;
+    async function loadSavedTheme() {
+      try {
+        const saved = await AsyncStorage.getItem(THEME_STORAGE_KEY);
+        if (isMounted && (saved === 'dark' || saved === 'light')) {
+          setPersistedMode(saved);
+        }
+      } catch {
+        // Fallback to light
+      }
+    }
+
+    loadSavedTheme();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const activeMode = forcedMode ?? persistedMode;
+
+  const setThemeMode = useCallback((newMode: 'light' | 'dark') => {
+    setPersistedMode(newMode);
+    AsyncStorage.setItem(THEME_STORAGE_KEY, newMode).catch(() => {});
+  }, []);
+
+  const toggleTheme = useCallback(() => {
+    setThemeMode(activeMode === 'dark' ? 'light' : 'dark');
+  }, [activeMode, setThemeMode]);
+
+  const theme = useMemo(
+    () => createTheme(activeMode, setThemeMode, toggleTheme),
+    [activeMode, setThemeMode, toggleTheme]
+  );
 
   return React.createElement(ThemeContext.Provider, { value: theme }, children);
 }
@@ -52,3 +97,4 @@ export function useTheme(): Theme {
 }
 
 export { lightColors, darkColors, typography, spacing, radii };
+

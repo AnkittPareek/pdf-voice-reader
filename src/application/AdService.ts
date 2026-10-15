@@ -20,7 +20,6 @@ import mobileAds, {
   RewardedAdEventType,
   TestIds,
 } from 'react-native-google-mobile-ads';
-import { usePlaybackStore } from '../state/playbackStore';
 
 const AD_FREE_UNTIL_KEY = '@pdf_voice_reader_ad_free_until';
 const LAST_INTERSTITIAL_KEY = '@pdf_voice_reader_last_interstitial';
@@ -42,7 +41,7 @@ export const ADMOB_CONFIG = {
   INTERSTITIAL_ID: isDev ? TestIds.INTERSTITIAL : 'ca-app-pub-1897406819003628/9519315607',
   REWARDED_ID: isDev ? TestIds.REWARDED : 'ca-app-pub-1897406819003628/6893152261',
   MIN_INTERSTITIAL_COOLDOWN_MS: 8 * 60 * 1000, // 8 minutes minimum between interstitials
-  MIN_READING_DURATION_FOR_AD_MS: 45 * 1000, // User must read for at least 45 seconds
+  MIN_READING_DURATION_FOR_AD_MS: 30 * 1000, // User must read for at least 30 seconds
 };
 
 export class AdService {
@@ -122,29 +121,18 @@ export class AdService {
   }
 
   /**
-   * Check if an interstitial can be safely shown without annoying the user.
-   * Rules:
-   * 1. User must NOT have active Ad-Free status.
-   * 2. Active speech playback must NOT be playing, paused, or loading (never interrupts listening).
-   * 3. At least 8 minutes must have passed since the previous interstitial.
+   * Check if an interstitial can be shown.
+   * Ads are allowed unless the user has active Ad-Free status.
    */
   canShowInterstitial(): boolean {
     if (this.isAdFreeActive()) {
       return false;
     }
-
-    const playbackState = usePlaybackStore.getState().state;
-    // CRITICAL: NEVER show interstitial if speech is active or paused!
-    if (playbackState === 'speaking' || playbackState === 'paused' || playbackState === 'loading') {
-      return false;
-    }
-
-    const elapsedSinceLastAd = Date.now() - this.lastInterstitialTimestamp;
-    return elapsedSinceLastAd >= ADMOB_CONFIG.MIN_INTERSTITIAL_COOLDOWN_MS;
+    return true;
   }
 
   /**
-   * Record that an interstitial was displayed to reset the 8-minute cooldown.
+   * Record that an interstitial was displayed.
    */
   async recordInterstitialShown(): Promise<void> {
     const now = Date.now();
@@ -177,7 +165,8 @@ export class AdService {
         unsubLoaded();
         unsubClosed();
         unsubError();
-        setTimeout(() => this.preloadInterstitial(), ADMOB_CONFIG.MIN_INTERSTITIAL_COOLDOWN_MS);
+        // Immediately preload the next interstitial so it is ready for future triggers
+        this.preloadInterstitial();
       });
 
       const unsubError = interstitial.addAdEventListener(AdEventType.ERROR, (err) => {
@@ -187,6 +176,7 @@ export class AdService {
         unsubLoaded();
         unsubClosed();
         unsubError();
+        setTimeout(() => this.preloadInterstitial(), 5000);
       });
 
       this.interstitial = interstitial;
@@ -197,14 +187,23 @@ export class AdService {
   }
 
   /**
-   * Present an interstitial ad if eligible and loaded.
+   * Present an interstitial ad.
+   * If an onClosed callback is provided, it is invoked after the user closes the ad
+   * or immediately if the ad cannot be shown.
    */
-  async showInterstitial(): Promise<boolean> {
+  async showInterstitial(onClosed?: () => void): Promise<boolean> {
     if (!this.canShowInterstitial()) {
+      onClosed?.();
       return false;
     }
 
     if (this.interstitial && this.isInterstitialLoaded) {
+      let unsubClosed: (() => void) | undefined;
+      unsubClosed = this.interstitial.addAdEventListener(AdEventType.CLOSED, () => {
+        unsubClosed?.();
+        onClosed?.();
+      });
+
       try {
         await this.interstitial.show();
         return true;
@@ -213,12 +212,75 @@ export class AdService {
         this.isInterstitialLoaded = false;
         this.interstitial = null;
         this.preloadInterstitial();
+        onClosed?.();
         return false;
       }
     }
 
+    // If interstitial is loading, give it up to 2 seconds to finish loading
+    if (this.interstitial && !this.isInterstitialLoaded) {
+      const loaded = await new Promise<boolean>((resolve) => {
+        const timeout = setTimeout(() => resolve(false), 2000);
+        const unsub = this.interstitial?.addAdEventListener(AdEventType.LOADED, () => {
+          clearTimeout(timeout);
+          unsub?.();
+          resolve(true);
+        });
+        const errUnsub = this.interstitial?.addAdEventListener(AdEventType.ERROR, () => {
+          clearTimeout(timeout);
+          errUnsub?.();
+          resolve(false);
+        });
+      });
+
+      if (loaded && this.interstitial) {
+        let unsubClosed: (() => void) | undefined;
+        unsubClosed = this.interstitial.addAdEventListener(AdEventType.CLOSED, () => {
+          unsubClosed?.();
+          onClosed?.();
+        });
+
+        try {
+          await this.interstitial.show();
+          return true;
+        } catch (e) {
+          console.warn('AdMob Interstitial display notice:', e);
+          this.isInterstitialLoaded = false;
+          this.interstitial = null;
+          this.preloadInterstitial();
+          onClosed?.();
+          return false;
+        }
+      }
+    }
+
     this.preloadInterstitial();
+    onClosed?.();
     return false;
+  }
+
+  /**
+   * Helper that displays an interstitial ad and executes the given action
+   * when the ad is closed (or immediately if ad is ad-free or unavailable).
+   */
+  async showInterstitialOrContinue(action?: () => void | Promise<void>): Promise<void> {
+    if (!this.canShowInterstitial()) {
+      await action?.();
+      return;
+    }
+
+    let actionExecuted = false;
+    const runActionOnce = async () => {
+      if (!actionExecuted) {
+        actionExecuted = true;
+        await action?.();
+      }
+    };
+
+    const shown = await this.showInterstitial(runActionOnce);
+    if (!shown) {
+      await runActionOnce();
+    }
   }
 
   /**
