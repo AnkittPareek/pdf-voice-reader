@@ -4,44 +4,93 @@
 PDF Voice: Read Aloud & Audio
 (Length: 29 / 30)
 
+---
+
 ## Short Description (Max 80 Chars)
+
+### Recommended Candidate 1 (Maximum ASO & Direct Benefit):
+PDF Voice Reader: Read aloud any PDF or ebook with natural text-to-speech audio.
+(Length: 80 / 80 | Primary keyword front-loaded within first 25 characters)
+
+### Candidate 2 (Focus on Offline Listening):
+PDF Voice Reader: Listen to PDFs aloud offline with natural text-to-speech.
+(Length: 75 / 80)
+
+### Candidate 3 (Action-Oriented without Brand Name):
+Read PDFs aloud offline with natural text-to-speech voice and background audio.
+(Length: 79 / 80)
+
+### Candidate 4 (Original User Draft):
 Listen to PDFs aloud offline with natural text-to-speech & background audio.
 (Length: 76 / 80)
 
+---
+
 ## Full Description (Max 4,000 Chars)
-PDF Voice Reader turns any PDF, ebook, or document into an offline listening experience using high-quality on-device text-to-speech. Whether you are commuting, exercising, walking, or resting your eyes, this app reads your favorite books and study materials aloud with natural-sounding speech and background playback.
+PDF Voice Reader turns any PDF, ebook, or document into an offline listening experience using natural on-device text-to-speech. Whether you are commuting, exercising, or resting your eyes, this versatile read aloud app transforms books and study materials into personal audiobooks with continuous background playback.
 
-✦ TURN ANY PDF INTO AN AUDIOBOOK
-Open textbooks, research papers, work manuals, lecture notes, or public-domain ebooks in seconds. PDF Voice Reader parses the text cleanly and begins reading sentence-by-sentence so you can listen while you multitask.
+✦ TURN ANY DOCUMENT INTO AN AUDIOBOOK
+Transform your digital library into spoken audio in seconds. PDF Voice Reader extracts clean text from textbooks, research papers, work manuals, lecture notes, and public-domain books. Stop staring at dense screens—listen comfortably while you walk, cook, exercise, or commute.
 
-✦ SYNCHRONIZED WORD & SENTENCE TRACKING
-Prefer to read and listen at the same time? Follow along with real-time visual sentence highlighting and word-level tracking. Tap any sentence on the page to immediately start reading aloud from that exact spot.
+✦ SMART MULTILINGUAL NARRATORS & VOICE PREVIEW
+Find the ideal voice for every book. Filter Android text-to-speech voices across world languages—including English, Spanish, French, German, Hindi, Japanese, and more. The app automatically detects document language on-device, suggests native narrators, and saves your preferred voice per book. Tap any voice to hear a live preview before listening.
+
+✦ SYNCHRONIZED WORD TRACKING & TAP-TO-READ
+Follow along with real-time visual tracking that highlights each sentence and word as it speaks. Strengthen comprehension and language learning. Tap any word or sentence on the page to immediately relocate speech playback to that exact spot.
 
 ✦ CONTINUOUS BACKGROUND PLAYBACK
-Keep listening even when your screen is turned off or while switching between other apps. With full lock-screen media controls and Android headset button support, you can pause, resume, and skip paragraphs without unlocking your phone.
+Keep listening with your screen off or while using other apps. Android media notifications provide lock-screen controls, drawer buttons, and headset support. A smart exit prompt lets you keep audio playing in the background.
 
-✦ 100% OFFLINE & COMPLETE PRIVACY
-Your documents, reading habits, and notes never leave your smartphone. The reader operates completely offline with zero cloud uploads, zero account registration, and zero trackers. Enjoy peaceful reading with complete privacy.
+✦ READERA-STYLE PAGE SCRUBBER & DUAL VIEW
+Switch reading modes and navigate long titles with ease:
+• Ebook Text Reflow: Clean formatted text with custom font sizes, line spacing, and margins.
+• Original PDF Mode: Preserves exact page layouts, diagrams, charts, and formulas.
+• Page Scrubber: Horizontal chips with active reading indicator for instant page jumps.
 
-✦ CUSTOMIZE VOICES & READING SPEED
-Choose from multiple natural speech voices installed on your Android device. Fine-tune your playback rate anywhere from 0.75x for complex technical papers up to 2.0x for speedy review.
+✦ SPEED CONTROL & AUDIO TUNING
+Match playback tempo to your needs. Fine-tune your speech rate from 0.75x up to 2.0x turbo speed for fast study review, and calibrate voice pitch for your ideal listening comfort.
+
+✦ MULTI-FORMAT SUPPORT
+Bring your entire reading shelf into one unified offline voice reader:
+• PDF documents (.pdf)
+• EPUB ebooks (.epub)
+• Plain text notes (.txt)
+• Markdown files (.md)
 
 ✦ AUTOMATIC RESUME MEMORY
-Never lose your place. The app automatically saves your exact reading position down to the page and sentence. Reopen your library days later and continue listening instantly with one tap.
+Never lose your place. PDF Voice Reader automatically saves your exact reading position down to the page and sentence, so you can resume listening instantly with one tap.
 
-✦ DUAL VIEW MODES
-Switch seamlessly between Ebook Text Reflow mode for comfortable large-font reading and Original PDF Page mode to inspect diagrams, charts, and original page layouts.
+✦ 100% OFFLINE PRIVACY & ZERO CLOUD STORAGE
+Your documents and reading habits stay strictly private. All text parsing and speech synthesis run 100% locally on your device with zero cloud uploads, no registration, and zero trackers. Enjoy books and notes with complete peace of mind.
+
+✦ CRISP LIGHT & SLEEK DARK THEMES
+Read comfortably day or night. Switch between a crisp light theme for daylight reading and a dark theme designed to minimize eye fatigue during late-night listening.
 
 ✦ HOW IT WORKS IN 3 SIMPLE STEPS
-1. Select a document: Import any PDF or text file from your device.
-2. Tap Listen: Choose your preferred reading speed and voice.
-3. Relax or multitask: Listen with your headphones in the background or follow along on screen.
+1. Import Document: Select any PDF, EPUB, TXT, or Markdown file from your device.
+2. Select Narrator & Speed: Preview voices in your language and adjust your reading rate.
+3. Listen & Absorb: Listen with headphones in the background or follow along on screen.
 
 ✦ DESIGNED FOR FOCUSED READERS
-• Students revising lecture notes and academic papers on the go
-• Commuters and drivers turning long trips into productive reading time
-• Avid book lovers transforming digital libraries into personalized audiobooks
-• Anyone looking to reduce eye strain after hours in front of screens
+• Students & Academics: Review syllabus, research papers, and lecture notes hands-free.
+• Busy Professionals: Turn whitepapers and reports into productive commute audio.
+• Commuters & Drivers: Listen safely to books and articles while on the go.
+• Language Learners: Master pronunciation by hearing native speakers with word highlighting.
+• Accessible Reading: Ideal for anyone experiencing vision fatigue, dyslexia, or eye strain.
 
-Experience a calm, distraction-free way to absorb knowledge. With PDF Voice Reader, your entire personal library is always ready to read aloud offline.
-(Length: 2706 / 4,000 | Word Count: 415 | Primary Keyword Density: 2.17%)
+Experience a distraction-free, intelligent way to absorb knowledge. Download PDF Voice Reader and enjoy your favorite documents read aloud anywhere, anytime offline.
+
+---
+### Full Description ASO & NLP Analytics:
+- Character Length: 3,941 / 4,000 characters (98.5% utilization)
+- Safety Margin: 59 characters buffer below the 4,000 hard limit
+- Total Word Count: 601 words
+- Entity Salience: Primary keyword "PDF Voice Reader" placed in opening 16 characters as the grammatical subject
+- Primary Keyword Frequency ("PDF Voice Reader"): 4 occurrences (2.10% density — within optimal 2.0% to 3.0% range)
+- Semantic Keyword Clusters:
+  * "read aloud": 2 occurrences
+  * "text-to-speech": 2 occurrences
+  * "offline": 4 occurrences
+  * "audiobook": 2 occurrences
+  * "background playback": 2 occurrences
+  * "voice": 12 occurrences
