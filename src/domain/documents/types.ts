@@ -18,6 +18,8 @@ export interface Document {
   lastPositionChunk: number;
   progress: number;
   status: DocumentStatus;
+  language?: string;
+  voiceId?: string;
 }
 
 export type DocumentStatus =

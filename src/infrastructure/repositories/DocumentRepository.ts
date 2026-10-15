@@ -14,8 +14,8 @@ export const DocumentRepository = {
     const sql = `INSERT OR REPLACE INTO documents
         (id, uri, file_name, title, author, page_count, file_size,
          created_at, last_opened_at, last_position_page, last_position_chunk,
-         progress, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+         progress, status, language, voice_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     const params = [
       doc.id,
       doc.uri,
@@ -30,6 +30,8 @@ export const DocumentRepository = {
       doc.lastPositionChunk,
       doc.progress,
       doc.status,
+      doc.language ?? null,
+      doc.voiceId ?? null,
     ];
     if (typeof db.runSync === 'function') {
       db.runSync(sql, params);
@@ -133,6 +135,21 @@ export const DocumentRepository = {
     }
   },
 
+  async updateVoice(id: string, voiceId?: string, language?: string): Promise<void> {
+    try {
+      const db = await getDatabase();
+      const sql = 'UPDATE documents SET voice_id = ?, language = ? WHERE id = ?';
+      const params = [voiceId ?? null, language ?? null, id];
+      if (typeof db.runSync === 'function') {
+        db.runSync(sql, params);
+        return;
+      }
+      await db.runAsync(sql, params);
+    } catch (e) {
+      console.warn('DocumentRepository.updateVoice error:', e);
+    }
+  },
+
   async delete(id: string): Promise<void> {
     try {
       const db = await getDatabase();
@@ -178,6 +195,8 @@ interface DocumentRow {
   last_position_chunk: number;
   progress: number;
   status: string;
+  language?: string | null;
+  voice_id?: string | null;
 }
 
 function mapRowToDocument(row: DocumentRow): Document {
@@ -195,5 +214,7 @@ function mapRowToDocument(row: DocumentRow): Document {
     lastPositionChunk: row.last_position_chunk,
     progress: row.progress,
     status: row.status as DocumentStatus,
+    language: row.language ?? undefined,
+    voiceId: row.voice_id ?? undefined,
   };
 }

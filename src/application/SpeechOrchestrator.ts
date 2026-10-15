@@ -63,6 +63,7 @@ export class SpeechOrchestrator {
   private playbackService: PlaybackService;
 
   private activeDocumentId: string | null = null;
+  private activeDocumentVoiceId: string | null = null;
   private currentPageIndex = 0;
   private currentChunkIndex = 0;
   private totalPages = 0;
@@ -104,6 +105,7 @@ export class SpeechOrchestrator {
     }
 
     this.activeDocumentId = documentId;
+    this.activeDocumentVoiceId = doc.voiceId || null;
     this.currentPageIndex = startPageIndex;
     this.currentChunkIndex = startChunkIndex;
     this.totalPages = doc.pageCount ?? 1;
@@ -348,10 +350,29 @@ export class SpeechOrchestrator {
   }
 
   /**
-   * Change TTS voice.
+   * Change TTS voice globally and for the active document.
    */
   async setVoice(voiceId: string): Promise<void> {
+    this.activeDocumentVoiceId = voiceId;
     usePlaybackStore.getState().setVoice(voiceId);
+    if (this.activeDocumentId) {
+      await DocumentRepository.updateVoice(this.activeDocumentId, voiceId);
+    }
+    if (this.isRunning && !this.isPaused && usePlaybackStore.getState().state === 'speaking') {
+      this.playToken++;
+      await this.speechEngine.stop();
+      void this.playCurrentChunk();
+    }
+  }
+
+  /**
+   * Set narrator voice specifically for the current active document.
+   */
+  async setDocumentVoice(voiceId: string, language?: string): Promise<void> {
+    this.activeDocumentVoiceId = voiceId;
+    if (this.activeDocumentId) {
+      await DocumentRepository.updateVoice(this.activeDocumentId, voiceId, language);
+    }
     if (this.isRunning && !this.isPaused && usePlaybackStore.getState().state === 'speaking') {
       this.playToken++;
       await this.speechEngine.stop();
@@ -434,7 +455,7 @@ export class SpeechOrchestrator {
 
     const store = usePlaybackStore.getState();
     const rate = store.rate;
-    const voiceId = store.voiceId;
+    const voiceId = this.activeDocumentVoiceId || store.voiceId;
 
     const startOffset = this.customStartOffset;
     const textToSpeak =
@@ -531,6 +552,8 @@ export class SpeechOrchestrator {
     this.playToken++;
     this.isRunning = false;
     this.isPaused = false;
+    this.activeDocumentId = null;
+    this.activeDocumentVoiceId = null;
     this.customStartOffset = 0;
     this.currentChunks = [];
     this.unsubAction?.();

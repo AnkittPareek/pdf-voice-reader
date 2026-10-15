@@ -43,6 +43,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - *Step 3 (Default Reading Speed)*: Preset speed chips (0.75x – 2.0x) paired with an interactive "🔊 Test Speed Sample" audio button.
     - *Step 4 (Supported Documents & Offline Privacy)*: Showcase of supported document formats (PDF, EPUB, TXT, MD) and 100% on-device offline guarantees.
 - **Settings Appearance UI Cleanup**: Streamlined the Appearance card in Settings by removing redundant segmented pill buttons, retaining a clean and intuitive Dark Mode toggle switch.
+- **Language Filtering for Narrator Voice Selection**:
+  - Added horizontal scrollable language filter chips (`[All]`, `[🇬🇧 English]`, `[🇮🇳 Hindi]`, `[🇪🇸 Spanish]`, etc.) to "Pick Your Narrator" in both First-Time Setup (`app/welcome.tsx`) and Settings (`app/settings.tsx`).
+  - Dynamically computes voice counts per language badge and filters voices instantly upon tapping any language chip.
+  - Enhanced voice previews to synthesize natural, native-script audio sample phrases tailored to the chosen language (e.g. Hindi preview: "नमस्ते! मैं आपके दस्तावेज़ स्पष्ट और स्वाभाविक आवाज़ में पढ़ने के लिए तैयार हूँ।", Spanish preview: "¡Hola! Estoy listo para leer tus documentos...", English preview: "Hello! I am ready to read your documents...").
+- **Per-Document Language Detection & Narrator Voice Setup**:
+  - Built zero-dependency, 100% on-device language detector analyzing Unicode script ranges (Devanagari/Hindi/Marathi, Cyrillic/Russian, Arabic/Urdu, Japanese Kana, Korean Hangul, Tamil, Telugu, Bengali, Gujarati, etc.) and Latin stopword n-gram distributions.
+  - When adding any document, page 0 text is automatically inspected and its language is detected without sending any data to external servers.
+  - Launches a dedicated "Document Narrator Setup" modal (`DocumentVoiceSetupModal`) presenting the auto-detected language, selectable override language chips, and filtered narrator voices matching that document's language with live audio previews.
+  - Saves document-specific `voice_id` and `language` in SQLite database (with safe, idempotent schema migrations) and application state.
+  - Updated `SpeechOrchestrator` to prioritize the document's selected voice during playback, allowing different documents (e.g. a Hindi document vs an English book) to read with their respective chosen narrators without altering the global default voice.
+  - Added a `[🎙️ Voice]` action button in the Reader top navigation bar allowing users to change the document's narrator voice and language at any time.
 
 ## [1.0.2] - 2026-10-11
 

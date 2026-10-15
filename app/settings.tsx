@@ -5,7 +5,7 @@
  * Settings: TTS voice, Language, Speed, Theme, About/privacy
  */
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -25,6 +25,11 @@ import { SPEED_PRESETS, SpeechVoice } from '../src/domain/speech/types';
 import { defaultSpeechEngine } from '../src/infrastructure/native/SpeechEngine';
 import { speechOrchestrator } from '../src/application/SpeechOrchestrator';
 import { adService } from '../src/application/AdService';
+import {
+  getAvailableVoiceLanguages,
+  filterVoicesByLanguage,
+  getPreviewSampleText,
+} from '../src/utils/languageDetector';
 
 export default function SettingsScreen() {
   const theme = useTheme();
@@ -37,6 +42,17 @@ export default function SettingsScreen() {
   const [voices, setVoices] = useState<SpeechVoice[]>([]);
   const [showVoiceModal, setShowVoiceModal] = useState(false);
   const [previewingVoiceId, setPreviewingVoiceId] = useState<string | null>(null);
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('all');
+
+  const availableLanguages = useMemo(() => getAvailableVoiceLanguages(voices), [voices]);
+
+  const filteredVoices = useMemo(() => {
+    const list = filterVoicesByLanguage(voices, selectedLanguage);
+    if (selectedLanguage === 'all') {
+      return [{ id: '', name: 'System default', locale: 'Natural device voice' }, ...list];
+    }
+    return list;
+  }, [voices, selectedLanguage]);
 
   useEffect(() => {
     async function loadVoices() {
@@ -85,8 +101,8 @@ export default function SettingsScreen() {
         await defaultSpeechEngine.stop();
         setPreviewingVoiceId(voiceKey);
 
-        const sampleText =
-          'Hello! This is a preview of this voice for reading your documents and books.';
+        const targetVoice = voices.find((v) => v.id === voiceId);
+        const sampleText = getPreviewSampleText(targetVoice?.locale || selectedLanguage);
         await defaultSpeechEngine.speak(sampleText, {
           voiceId: voiceId && voiceId !== 'system_default' ? voiceId : undefined,
           rate: rate || 1.0,
@@ -97,7 +113,7 @@ export default function SettingsScreen() {
         setPreviewingVoiceId(null);
       }
     },
-    [previewingVoiceId, rate]
+    [previewingVoiceId, rate, voices, selectedLanguage]
   );
 
   const handleSelectVoice = useCallback(
@@ -552,7 +568,7 @@ export default function SettingsScreen() {
                   { color: theme.colors.textSecondary },
                 ]}
               >
-                1.0.2 (Build 3)
+                1.0.3 (Build 4)
               </Text>
             </View>
 
@@ -619,8 +635,88 @@ export default function SettingsScreen() {
               </TouchableOpacity>
             </View>
 
+            {/* Language filter chips */}
+            <View style={styles.modalLanguageFilterWrapper}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.modalLanguageFilterScroll}
+              >
+                <TouchableOpacity
+                  style={[
+                    styles.modalLanguageChip,
+                    selectedLanguage === 'all' && styles.modalLanguageChipActive,
+                    {
+                      backgroundColor:
+                        selectedLanguage === 'all'
+                          ? theme.colors.accent
+                          : theme.colors.surface,
+                      borderColor:
+                        selectedLanguage === 'all'
+                          ? theme.colors.accent
+                          : theme.colors.divider,
+                    },
+                  ]}
+                  onPress={() => setSelectedLanguage('all')}
+                  accessibilityRole="button"
+                  accessibilityLabel="All languages"
+                >
+                  <Text
+                    style={[
+                      styles.modalLanguageChipText,
+                      {
+                        color:
+                          selectedLanguage === 'all'
+                            ? '#FFFFFF'
+                            : theme.colors.textPrimary,
+                      },
+                    ]}
+                  >
+                    All ({voices.length + 1})
+                  </Text>
+                </TouchableOpacity>
+
+                {availableLanguages.map((lang) => {
+                  const isSelected = selectedLanguage === lang.code;
+                  return (
+                    <TouchableOpacity
+                      key={lang.code}
+                      style={[
+                        styles.modalLanguageChip,
+                        isSelected && styles.modalLanguageChipActive,
+                        {
+                          backgroundColor: isSelected
+                            ? theme.colors.accent
+                            : theme.colors.surface,
+                          borderColor: isSelected
+                            ? theme.colors.accent
+                            : theme.colors.divider,
+                        },
+                      ]}
+                      onPress={() => setSelectedLanguage(lang.code)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Filter by ${lang.label}`}
+                    >
+                      <Text
+                        style={[
+                          styles.modalLanguageChipText,
+                          {
+                            color: isSelected
+                              ? '#FFFFFF'
+                              : theme.colors.textPrimary,
+                          },
+                        ]}
+                      >
+                        {lang.label} ({lang.count})
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+
             <FlatList
-              data={[{ id: '', name: 'System default', locale: '' }, ...voices]}
+              data={filteredVoices}
               keyExtractor={(item) => item.id || 'system_default'}
               showsVerticalScrollIndicator={true}
               renderItem={({ item }) => {
@@ -878,6 +974,29 @@ const styles = StyleSheet.create({
   },
   modalCloseText: {
     fontSize: 18,
+    fontWeight: '600',
+  },
+  modalLanguageFilterWrapper: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(150, 150, 150, 0.15)',
+  },
+  modalLanguageFilterScroll: {
+    gap: 8,
+    paddingVertical: 2,
+  },
+  modalLanguageChip: {
+    paddingHorizontal: 13,
+    paddingVertical: 6,
+    borderRadius: 18,
+    borderWidth: 1,
+  },
+  modalLanguageChipActive: {
+    borderWidth: 1,
+  },
+  modalLanguageChipText: {
+    fontSize: 13,
     fontWeight: '600',
   },
   voiceListContent: {

@@ -8,7 +8,7 @@
  * 4. Supported Formats & Privacy: PDF, EPUB, TXT, MD format showcase & offline guarantees
  */
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -26,6 +26,11 @@ import { usePlaybackStore } from '../src/state/playbackStore';
 import { speechOrchestrator } from '../src/application/SpeechOrchestrator';
 import { defaultSpeechEngine } from '../src/infrastructure/native/SpeechEngine';
 import { SpeechVoice } from '../src/domain/speech/types';
+import {
+  getAvailableVoiceLanguages,
+  filterVoicesByLanguage,
+  getPreviewSampleText,
+} from '../src/utils/languageDetector';
 
 export const HAS_SEEN_WELCOME_KEY = '@pdf_voice_has_seen_welcome';
 
@@ -68,11 +73,22 @@ export default function WelcomeScreen() {
   const [voices, setVoices] = useState<SpeechVoice[]>([]);
   const [previewingVoiceId, setPreviewingVoiceId] = useState<string | null>(null);
   const [isPreviewingSpeed, setIsPreviewingSpeed] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('all');
 
   const selectedVoiceId = usePlaybackStore((s) => s.voiceId);
   const setVoice = usePlaybackStore((s) => s.setVoice);
   const rate = usePlaybackStore((s) => s.rate);
   const setRate = usePlaybackStore((s) => s.setRate);
+
+  const availableLanguages = useMemo(() => getAvailableVoiceLanguages(voices), [voices]);
+
+  const filteredVoices = useMemo(() => {
+    const list = filterVoicesByLanguage(voices, selectedLanguage);
+    if (selectedLanguage === 'all') {
+      return [{ id: '', name: 'System Default', locale: 'Natural device voice' }, ...list];
+    }
+    return list;
+  }, [voices, selectedLanguage]);
 
   // Load available voices on mount
   useEffect(() => {
@@ -144,8 +160,8 @@ export default function WelcomeScreen() {
         setPreviewingVoiceId(voiceKey);
         setIsPreviewingSpeed(false);
 
-        const sampleText =
-          'Hello! This is a preview of this voice for reading your documents.';
+        const targetVoice = voices.find((v) => v.id === voiceId);
+        const sampleText = getPreviewSampleText(targetVoice?.locale || selectedLanguage);
         await defaultSpeechEngine.speak(sampleText, {
           voiceId: voiceId && voiceId !== 'system_default' ? voiceId : undefined,
           rate: rate || 1.0,
@@ -156,7 +172,7 @@ export default function WelcomeScreen() {
         setPreviewingVoiceId(null);
       }
     },
-    [previewingVoiceId, rate]
+    [previewingVoiceId, rate, voices, selectedLanguage]
   );
 
   // Voice selection handler
@@ -317,8 +333,6 @@ export default function WelcomeScreen() {
 
   // Step 2: TTS Voice Selection content
   const renderVoiceStep = () => {
-    const voiceList = [{ id: '', name: 'System Default', locale: 'Device natural voice' }, ...voices];
-
     return (
       <View style={styles.stepContainer}>
         <View style={styles.stepHeaderArea}>
@@ -329,13 +343,76 @@ export default function WelcomeScreen() {
             Pick Your Narrator
           </Text>
           <Text style={[styles.stepSubtitle, { color: theme.colors.textSecondary }]}>
-            Tap Preview to hear sample narration, then tap the voice you like best to select it.
+            Select a language to filter voices, tap Preview to audition, and choose the voice you like best.
           </Text>
+        </View>
+
+        {/* Horizontal Language Filter Chips */}
+        <View style={styles.languageFilterWrapper}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.languageFilterScroll}
+          >
+            <TouchableOpacity
+              style={[
+                styles.languageChip,
+                selectedLanguage === 'all' && styles.languageChipActive,
+                {
+                  backgroundColor:
+                    selectedLanguage === 'all' ? theme.colors.accent : theme.colors.surface,
+                  borderColor:
+                    selectedLanguage === 'all' ? theme.colors.accent : theme.colors.divider,
+                },
+              ]}
+              onPress={() => setSelectedLanguage('all')}
+              accessibilityRole="button"
+              accessibilityLabel="All languages"
+            >
+              <Text
+                style={[
+                  styles.languageChipText,
+                  { color: selectedLanguage === 'all' ? '#FFFFFF' : theme.colors.textPrimary },
+                ]}
+              >
+                All ({voices.length + 1})
+              </Text>
+            </TouchableOpacity>
+
+            {availableLanguages.map((lang) => {
+              const isSelected = selectedLanguage === lang.code;
+              return (
+                <TouchableOpacity
+                  key={lang.code}
+                  style={[
+                    styles.languageChip,
+                    isSelected && styles.languageChipActive,
+                    {
+                      backgroundColor: isSelected ? theme.colors.accent : theme.colors.surface,
+                      borderColor: isSelected ? theme.colors.accent : theme.colors.divider,
+                    },
+                  ]}
+                  onPress={() => setSelectedLanguage(lang.code)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Filter by ${lang.label}`}
+                >
+                  <Text
+                    style={[
+                      styles.languageChipText,
+                      { color: isSelected ? '#FFFFFF' : theme.colors.textPrimary },
+                    ]}
+                  >
+                    {lang.label} ({lang.count})
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
         </View>
 
         <View style={styles.voiceListWrapper}>
           <FlatList
-            data={voiceList}
+            data={filteredVoices}
             keyExtractor={(item) => item.id || 'system_default'}
             showsVerticalScrollIndicator={true}
             style={styles.voiceFlatList}
@@ -815,6 +892,26 @@ const styles = StyleSheet.create({
   },
 
   // Voice step
+  languageFilterWrapper: {
+    marginBottom: 12,
+  },
+  languageFilterScroll: {
+    paddingVertical: 2,
+    gap: 8,
+  },
+  languageChip: {
+    paddingHorizontal: 13,
+    paddingVertical: 6,
+    borderRadius: 18,
+    borderWidth: 1,
+  },
+  languageChipActive: {
+    borderWidth: 1,
+  },
+  languageChipText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
   voiceListWrapper: {
     maxHeight: 380,
   },

@@ -33,9 +33,14 @@ import { HAS_SEEN_WELCOME_KEY } from './welcome';
 import { BannerAdView } from '../src/components/Ads/BannerAdView';
 import { RewardedAdModal } from '../src/components/Ads/RewardedAdModal';
 import { HomeAudioPlayer } from '../src/components/HomeAudioPlayer/HomeAudioPlayer';
+import { DocumentVoiceSetupModal } from '../src/components/Modals/DocumentVoiceSetupModal';
 import { adService } from '../src/application/AdService';
 import { usePlaybackStore } from '../src/state/playbackStore';
 import { speechOrchestrator } from '../src/application/SpeechOrchestrator';
+import { defaultPdfEngine } from '../src/infrastructure/native/PdfEngine';
+import { defaultSpeechEngine } from '../src/infrastructure/native/SpeechEngine';
+import { detectDocumentLanguage } from '../src/utils/languageDetector';
+import { SpeechVoice } from '../src/domain/speech/types';
 
 export default function LibraryScreen() {
   const theme = useTheme();
@@ -43,12 +48,24 @@ export default function LibraryScreen() {
   const { documents, loadDocuments, addDocument, removeDocument } = useLibraryStore();
   const [showRewardedModal, setShowRewardedModal] = useState(false);
   const [isAdFree, setIsAdFree] = useState(false);
+  const [voices, setVoices] = useState<SpeechVoice[]>([]);
+  const [showVoiceSetupModal, setShowVoiceSetupModal] = useState(false);
+  const [pendingDoc, setPendingDoc] = useState<Document | null>(null);
+  const [detectedLanguage, setDetectedLanguage] = useState<{ code: string; name: string }>({
+    code: 'en',
+    name: 'English',
+  });
 
   useEffect(() => {
     loadDocuments();
     adService.initialize().then(() => {
       setIsAdFree(adService.isAdFreeActive());
     });
+    defaultSpeechEngine
+      .initialize()
+      .then(() => defaultSpeechEngine.getVoices())
+      .then(setVoices)
+      .catch(() => {});
   }, [loadDocuments]);
 
   useEffect(() => {
@@ -105,8 +122,25 @@ export default function LibraryScreen() {
         );
         return;
       }
+
+      const docId = generateId();
+      let detectedLang = 'en';
+      let detectedLangName = 'English';
+
+      try {
+        await defaultPdfEngine.open(asset.uri, docId);
+        const pageText = await defaultPdfEngine.getPageText(docId, 0);
+        if (pageText?.text) {
+          const res = detectDocumentLanguage(pageText.text);
+          detectedLang = res.code;
+          detectedLangName = res.name;
+        }
+      } catch (err) {
+        console.warn('Initial language detection error:', err);
+      }
+
       const doc: Document = {
-        id: generateId(),
+        id: docId,
         uri: asset.uri,
         fileName: asset.name || 'Document',
         fileSize: asset.size,
@@ -115,18 +149,50 @@ export default function LibraryScreen() {
         lastPositionPage: 0,
         lastPositionChunk: 0,
         progress: 0,
-        status: 'importing',
+        status: 'ready',
+        language: detectedLang,
       };
 
-      await addDocument(doc);
-      router.push({ pathname: '/reader', params: { documentId: doc.id } });
+      setPendingDoc(doc);
+      setDetectedLanguage({ code: detectedLang, name: detectedLangName });
+      setShowVoiceSetupModal(true);
     } catch {
       Alert.alert(
         'Could not open document',
         'There was a problem selecting the file. Please try again.'
       );
     }
-  }, [addDocument, router]);
+  }, []);
+
+  const handleConfirmDocVoice = useCallback(
+    async (voiceId: string, languageCode: string) => {
+      if (!pendingDoc) return;
+      setShowVoiceSetupModal(false);
+
+      const finalDoc: Document = {
+        ...pendingDoc,
+        language: languageCode,
+        voiceId: voiceId || undefined,
+      };
+
+      await addDocument(finalDoc);
+      if (voiceId) {
+        await speechOrchestrator.setDocumentVoice(voiceId, languageCode);
+      }
+      setPendingDoc(null);
+      router.push({ pathname: '/reader', params: { documentId: finalDoc.id } });
+    },
+    [addDocument, pendingDoc, router]
+  );
+
+  const handleCancelDocVoice = useCallback(async () => {
+    if (!pendingDoc) return;
+    setShowVoiceSetupModal(false);
+    await addDocument(pendingDoc);
+    const id = pendingDoc.id;
+    setPendingDoc(null);
+    router.push({ pathname: '/reader', params: { documentId: id } });
+  }, [addDocument, pendingDoc, router]);
 
   const handleDocumentPress = useCallback(
     (doc: Document) => {
@@ -439,6 +505,19 @@ export default function LibraryScreen() {
         visible={showRewardedModal}
         onClose={() => setShowRewardedModal(false)}
         onRewardGranted={() => setIsAdFree(true)}
+      />
+
+      {/* Per-Document Narrator Voice & Language Setup Modal */}
+      <DocumentVoiceSetupModal
+        key={pendingDoc?.id || 'new_doc_voice_modal'}
+        visible={showVoiceSetupModal}
+        documentTitle={pendingDoc?.fileName || 'Document'}
+        detectedLanguageCode={detectedLanguage.code}
+        detectedLanguageName={detectedLanguage.name}
+        initialVoiceId={pendingDoc?.voiceId || ''}
+        voices={voices}
+        onConfirm={handleConfirmDocVoice}
+        onCancel={handleCancelDocVoice}
       />
     </SafeAreaView>
   );

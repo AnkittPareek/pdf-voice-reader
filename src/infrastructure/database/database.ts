@@ -56,9 +56,18 @@ function createTablesSync(database: SQLite.SQLiteDatabase): void {
       last_position_page INTEGER DEFAULT 0,
       last_position_chunk INTEGER DEFAULT 0,
       progress REAL DEFAULT 0.0,
-      status TEXT DEFAULT 'ready'
+      status TEXT DEFAULT 'ready',
+      language TEXT,
+      voice_id TEXT
     );
   `);
+
+  try {
+    database.execSync(`ALTER TABLE documents ADD COLUMN language TEXT;`);
+  } catch {}
+  try {
+    database.execSync(`ALTER TABLE documents ADD COLUMN voice_id TEXT;`);
+  } catch {}
 
   database.execSync(`
     CREATE TABLE IF NOT EXISTS playback_settings (
@@ -112,9 +121,18 @@ async function createTables(database: SQLite.SQLiteDatabase): Promise<void> {
       last_position_page INTEGER DEFAULT 0,
       last_position_chunk INTEGER DEFAULT 0,
       progress REAL DEFAULT 0.0,
-      status TEXT DEFAULT 'ready'
+      status TEXT DEFAULT 'ready',
+      language TEXT,
+      voice_id TEXT
     );
   `);
+
+  try {
+    await database.execAsync(`ALTER TABLE documents ADD COLUMN language TEXT;`);
+  } catch {}
+  try {
+    await database.execAsync(`ALTER TABLE documents ADD COLUMN voice_id TEXT;`);
+  } catch {}
 
   // Playback settings table — Section 11.2
   await database.execAsync(`

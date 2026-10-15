@@ -32,7 +32,7 @@ import { useLibraryStore } from '../src/state/libraryStore';
 import { ListenButton } from '../src/components/ListenButton/ListenButton';
 import { ProgressBar } from '../src/components/ProgressBar/ProgressBar';
 import { Document } from '../src/domain/documents/types';
-import { SpeechChunk, SPEED_PRESETS } from '../src/domain/speech/types';
+import { SpeechChunk, SPEED_PRESETS, SpeechVoice } from '../src/domain/speech/types';
 import { DocumentRepository } from '../src/infrastructure/repositories/DocumentRepository';
 import { defaultPdfEngine } from '../src/infrastructure/native/PdfEngine';
 import { speechOrchestrator } from '../src/application/SpeechOrchestrator';
@@ -41,6 +41,8 @@ import { formatRate, getDocumentDisplayName } from '../src/utils/formatters';
 import { PlayIcon, PauseIcon, PrevTrackIcon, NextTrackIcon, ExpandIcon, StopIcon } from '../src/components/AudioIcons/AudioIcons';
 import { adService } from '../src/application/AdService';
 import { BackgroundPlaybackExitModal } from '../src/components/Modals/BackgroundPlaybackExitModal';
+import { DocumentVoiceSetupModal } from '../src/components/Modals/DocumentVoiceSetupModal';
+import { defaultSpeechEngine } from '../src/infrastructure/native/SpeechEngine';
 
 export default function ReaderScreen() {
   const theme = useTheme();
@@ -60,6 +62,16 @@ export default function ReaderScreen() {
   // ReadEra features
   const [viewMode, setViewMode] = useState<'text' | 'pdf'>('text');
   const [fontSize, setFontSize] = useState<number>(17);
+  const [voices, setVoices] = useState<SpeechVoice[]>([]);
+  const [showVoiceModal, setShowVoiceModal] = useState(false);
+
+  useEffect(() => {
+    defaultSpeechEngine
+      .initialize()
+      .then(() => defaultSpeechEngine.getVoices())
+      .then(setVoices)
+      .catch(() => {});
+  }, []);
 
   const playback = usePlaybackStore();
   const isPlaying = playback.state === 'speaking';
@@ -371,6 +383,25 @@ export default function ReaderScreen() {
     }
   }, [document, router]);
 
+  const handleConfirmDocVoice = useCallback(
+    async (voiceId: string, languageCode: string) => {
+      setShowVoiceModal(false);
+      if (!document) return;
+
+      const updatedDoc: Document = {
+        ...document,
+        language: languageCode,
+        voiceId: voiceId || undefined,
+      };
+
+      setDocument(updatedDoc);
+      await DocumentRepository.updateVoice(document.id, voiceId, languageCode);
+      await useLibraryStore.getState().updateDocument(updatedDoc);
+      await speechOrchestrator.setDocumentVoice(voiceId, languageCode);
+    },
+    [document]
+  );
+
   const handleFontSizeDecrease = () => {
     setFontSize((prev) => Math.max(14, prev - 2));
   };
@@ -452,6 +483,15 @@ export default function ReaderScreen() {
             {getDocumentDisplayName(document.title, document.fileName)}
           </Text>
         </View>
+
+        {/* Narrator Voice Button */}
+        <TouchableOpacity
+          onPress={() => setShowVoiceModal(true)}
+          style={[styles.narratorHeaderBtn, { borderColor: theme.colors.divider, backgroundColor: theme.colors.surface }]}
+          accessibilityLabel="Change narrator voice for this document"
+        >
+          <Text style={[styles.narratorHeaderBtnText, { color: theme.colors.accent }]}>🎙️ Voice</Text>
+        </TouchableOpacity>
 
         {/* Font size adjustments for reading */}
         <View style={styles.fontControls}>
@@ -1073,6 +1113,20 @@ export default function ReaderScreen() {
         onStopAndExit={handleStopAndExit}
         onCancel={() => setShowExitModal(false)}
       />
+
+      {/* Per-Document Narrator Voice & Language Setup Modal */}
+      {document && (
+        <DocumentVoiceSetupModal
+          key={`${document.id}_${document.voiceId || 'default'}_${showVoiceModal}`}
+          visible={showVoiceModal}
+          documentTitle={getDocumentDisplayName(document.title, document.fileName)}
+          detectedLanguageCode={document.language || 'en'}
+          initialVoiceId={document.voiceId || ''}
+          voices={voices}
+          onConfirm={handleConfirmDocVoice}
+          onCancel={() => setShowVoiceModal(false)}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -1100,6 +1154,19 @@ const styles = StyleSheet.create({
   headerTitleContainer: {
     flex: 1,
     paddingHorizontal: 8,
+  },
+  narratorHeaderBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginRight: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  narratorHeaderBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
   fontControls: {
     flexDirection: 'row',
