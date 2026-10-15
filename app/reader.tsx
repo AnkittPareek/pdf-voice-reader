@@ -252,8 +252,9 @@ export default function ReaderScreen() {
   const pdfPagesScrollRef = useRef<ScrollView>(null);
 
   const handleBack = useCallback(() => {
-    // If audio is actively speaking or paused, ask user: hear in background or stop playing
-    if (playback.state === 'speaking' || playback.state === 'paused') {
+    const currentState = usePlaybackStore.getState().state;
+    // If audio is actively speaking, paused, or loading, ask user: hear in background or stop playing
+    if (currentState === 'speaking' || currentState === 'paused' || currentState === 'loading') {
       setShowExitModal(true);
       return;
     }
@@ -261,10 +262,14 @@ export default function ReaderScreen() {
     adService.showInterstitialOrContinue(() => {
       router.back();
     });
-  }, [playback.state, router]);
+  }, [router]);
 
-  const handleContinueInBackground = useCallback(() => {
+  const handleContinueInBackground = useCallback(async () => {
     setShowExitModal(false);
+    const currentState = usePlaybackStore.getState().state;
+    if (currentState === 'paused') {
+      await speechOrchestrator.resume();
+    }
     router.back();
   }, [router]);
 
@@ -392,6 +397,25 @@ export default function ReaderScreen() {
     }
   }, [document, router]);
 
+  const wasPlayingBeforeVoiceModal = useRef(false);
+
+  const handleOpenVoiceModal = useCallback(async () => {
+    const isCurrentlySpeaking = usePlaybackStore.getState().state === 'speaking';
+    wasPlayingBeforeVoiceModal.current = isCurrentlySpeaking;
+    if (isCurrentlySpeaking) {
+      await speechOrchestrator.pause();
+    }
+    setShowVoiceModal(true);
+  }, []);
+
+  const handleCloseVoiceModal = useCallback(async () => {
+    setShowVoiceModal(false);
+    if (wasPlayingBeforeVoiceModal.current) {
+      wasPlayingBeforeVoiceModal.current = false;
+      await speechOrchestrator.resume();
+    }
+  }, []);
+
   const handleConfirmDocVoice = useCallback(
     async (voiceId: string, languageCode: string) => {
       setShowVoiceModal(false);
@@ -407,6 +431,11 @@ export default function ReaderScreen() {
       await DocumentRepository.updateVoice(document.id, voiceId, languageCode);
       await useLibraryStore.getState().updateDocument(updatedDoc);
       await speechOrchestrator.setDocumentVoice(voiceId, languageCode);
+
+      if (wasPlayingBeforeVoiceModal.current) {
+        wasPlayingBeforeVoiceModal.current = false;
+        await speechOrchestrator.resume();
+      }
     },
     [document]
   );
@@ -495,7 +524,7 @@ export default function ReaderScreen() {
 
         {/* Narrator Voice Button */}
         <TouchableOpacity
-          onPress={() => setShowVoiceModal(true)}
+          onPress={handleOpenVoiceModal}
           style={[styles.narratorHeaderBtn, { borderColor: theme.colors.divider, backgroundColor: theme.colors.surface }]}
           accessibilityLabel="Change narrator voice for this document"
         >
@@ -1133,7 +1162,7 @@ export default function ReaderScreen() {
           initialVoiceId={document.voiceId || ''}
           voices={voices}
           onConfirm={handleConfirmDocVoice}
-          onCancel={() => setShowVoiceModal(false)}
+          onCancel={handleCloseVoiceModal}
         />
       )}
     </SafeAreaView>

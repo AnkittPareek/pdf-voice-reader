@@ -75,6 +75,7 @@ export class SpeechOrchestrator {
   private unsubRange: (() => void) | null = null;
   private docTitle = 'PDF Voice Reader';
   private customStartOffset = 0;
+  private voiceChangedWhilePaused = false;
 
   constructor(
     pdfEngine: PdfEngine = defaultPdfEngine,
@@ -178,6 +179,12 @@ export class SpeechOrchestrator {
   async pause(): Promise<void> {
     if (!this.isRunning || this.isPaused) return;
 
+    // Save current word offset so resume can continue seamlessly from this word
+    const currentRange = usePlaybackStore.getState().currentRange;
+    if (currentRange && currentRange.start > 0) {
+      this.customStartOffset = currentRange.start;
+    }
+
     this.playToken++;
     this.isPaused = true;
     await this.speechEngine.pause();
@@ -216,18 +223,33 @@ export class SpeechOrchestrator {
     );
 
     const currentToken = ++this.playToken;
+
+    // If voice was changed while paused, speak current chunk directly with the new voice
+    if (this.voiceChangedWhilePaused) {
+      this.voiceChangedWhilePaused = false;
+      await this.speechEngine.stop();
+      if (currentToken === this.playToken && this.isRunning && !this.isPaused) {
+        void this.playCurrentChunk();
+      }
+      return;
+    }
+
     try {
       const completed = await this.speechEngine.resume();
       if (completed === true) {
         if (currentToken === this.playToken && this.isRunning && !this.isPaused) {
           await this.onChunkDone();
         }
+      } else if (completed === false) {
+        // Native resume could not resume (e.g. preview audio interrupted native pause state).
+        // Fallback: cleanly restart speaking the current chunk from saved offset!
+        if (currentToken === this.playToken && this.isRunning && !this.isPaused) {
+          void this.playCurrentChunk();
+        }
       }
-    } catch (err: any) {
+    } catch {
       if (currentToken === this.playToken && this.isRunning && !this.isPaused) {
-        usePlaybackStore
-          .getState()
-          .setError(err?.message || 'Error occurred during speech playback');
+        void this.playCurrentChunk();
       }
     }
   }
@@ -373,10 +395,13 @@ export class SpeechOrchestrator {
     if (this.activeDocumentId) {
       await DocumentRepository.updateVoice(this.activeDocumentId, voiceId, language);
     }
+    usePlaybackStore.getState().setVoice(voiceId);
     if (this.isRunning && !this.isPaused && usePlaybackStore.getState().state === 'speaking') {
       this.playToken++;
       await this.speechEngine.stop();
       void this.playCurrentChunk();
+    } else if (this.isRunning && this.isPaused) {
+      this.voiceChangedWhilePaused = true;
     }
   }
 
@@ -555,6 +580,7 @@ export class SpeechOrchestrator {
     this.activeDocumentId = null;
     this.activeDocumentVoiceId = null;
     this.customStartOffset = 0;
+    this.voiceChangedWhilePaused = false;
     this.currentChunks = [];
     this.unsubAction?.();
     this.unsubAction = null;

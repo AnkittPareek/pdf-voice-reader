@@ -43,7 +43,8 @@ export default function ListeningScreen() {
   const [showExitModal, setShowExitModal] = useState(false);
 
   const handleBack = useCallback(() => {
-    if (playback.state === 'speaking' || playback.state === 'paused') {
+    const currentState = usePlaybackStore.getState().state;
+    if (currentState === 'speaking' || currentState === 'paused' || currentState === 'loading') {
       setShowExitModal(true);
       return;
     }
@@ -51,10 +52,14 @@ export default function ListeningScreen() {
     adService.showInterstitialOrContinue(() => {
       router.back();
     });
-  }, [playback.state, router]);
+  }, [router]);
 
-  const handleContinueInBackground = useCallback(() => {
+  const handleContinueInBackground = useCallback(async () => {
     setShowExitModal(false);
+    const currentState = usePlaybackStore.getState().state;
+    if (currentState === 'paused') {
+      await speechOrchestrator.resume();
+    }
     router.back();
   }, [router]);
 

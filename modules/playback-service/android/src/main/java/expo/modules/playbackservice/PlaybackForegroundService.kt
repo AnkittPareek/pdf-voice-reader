@@ -46,6 +46,7 @@ class PlaybackForegroundService : Service(), AudioManager.OnAudioFocusChangeList
   private var currentTitle = "PDF Voice Reader"
   private var currentSubtitle = "Listening"
   private var currentIsPlaying = true
+  private var wasPlayingBeforeTransientLoss = false
 
   override fun onCreate() {
     super.onCreate()
@@ -81,6 +82,7 @@ class PlaybackForegroundService : Service(), AudioManager.OnAudioFocusChangeList
   override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
     when (intent?.action) {
       ACTION_START -> {
+        wasPlayingBeforeTransientLoss = false
         currentTitle = intent.getStringExtra(EXTRA_TITLE) ?: currentTitle
         currentSubtitle = intent.getStringExtra(EXTRA_SUBTITLE) ?: currentSubtitle
         currentIsPlaying = intent.getBooleanExtra(EXTRA_IS_PLAYING, true)
@@ -101,6 +103,7 @@ class PlaybackForegroundService : Service(), AudioManager.OnAudioFocusChangeList
           acquireWakeLock()
           requestAudioFocus()
         } else {
+          wasPlayingBeforeTransientLoss = false
           releaseWakeLock()
           abandonAudioFocus()
         }
@@ -109,6 +112,7 @@ class PlaybackForegroundService : Service(), AudioManager.OnAudioFocusChangeList
         notificationManager.notify(NOTIFICATION_ID, notification)
       }
       ACTION_STOP, ACTION_NOTIFICATION_STOP -> {
+        wasPlayingBeforeTransientLoss = false
         releaseWakeLock()
         actionListener?.invoke("stop")
         abandonAudioFocus()
@@ -121,6 +125,7 @@ class PlaybackForegroundService : Service(), AudioManager.OnAudioFocusChangeList
         stopSelf()
       }
       ACTION_NOTIFICATION_PLAY -> {
+        wasPlayingBeforeTransientLoss = false
         currentIsPlaying = true
         acquireWakeLock()
         requestAudioFocus()
@@ -129,6 +134,7 @@ class PlaybackForegroundService : Service(), AudioManager.OnAudioFocusChangeList
         notificationManager.notify(NOTIFICATION_ID, buildNotification())
       }
       ACTION_NOTIFICATION_PAUSE -> {
+        wasPlayingBeforeTransientLoss = false
         currentIsPlaying = false
         releaseWakeLock()
         abandonAudioFocus()
@@ -298,15 +304,23 @@ class PlaybackForegroundService : Service(), AudioManager.OnAudioFocusChangeList
 
   override fun onAudioFocusChange(focusChange: Int) {
     when (focusChange) {
-      AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
-        releaseWakeLock()
-        actionListener?.invoke("pause")
+      AudioManager.AUDIOFOCUS_LOSS_TRANSIENT,
+      AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+        if (currentIsPlaying) {
+          wasPlayingBeforeTransientLoss = true
+          releaseWakeLock()
+          actionListener?.invoke("pause")
+        }
       }
       AudioManager.AUDIOFOCUS_GAIN -> {
-        // Do NOT automatically resume playback on audio focus gain.
-        // User must explicitly tap the play button to resume.
+        if (wasPlayingBeforeTransientLoss) {
+          wasPlayingBeforeTransientLoss = false
+          acquireWakeLock()
+          actionListener?.invoke("play")
+        }
       }
       AudioManager.AUDIOFOCUS_LOSS -> {
+        wasPlayingBeforeTransientLoss = false
         releaseWakeLock()
         actionListener?.invoke("stop")
       }
