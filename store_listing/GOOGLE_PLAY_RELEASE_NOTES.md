@@ -1,7 +1,7 @@
 # Google Play Console Submission Notes & Release Details
 **App Name:** PDF Voice: Read Aloud & Audio  
 **Package Name:** `com.pdfvoice.app`  
-**Version:** 1.0.1 (`versionCode 2`)  
+**Version:** 1.0.3 (`versionCode 4`)  
 
 ---
 
@@ -11,16 +11,15 @@
 
 ### English (en-US)
 ```text
-Welcome to the initial release of PDF Voice Reader!
-
-• Listen to any PDF, textbook, or document offline with natural voice speech.
-• Synchronized sentence highlighting and tap-to-read navigation.
-• Seamless background playback with lock screen media controls.
-• Adjustable reading speeds (0.75x – 2.0x) and voice selection.
-• Automatic resume memory—picks up right where you stopped.
-• 100% private and offline: your documents never leave your device.
+What's new in v1.0.3:
+• Multilingual Voices: Filter narrators by language (English, Hindi, Spanish, etc.) with live audio previews.
+• Auto Language Detection: Identifies document language on import to suggest matching voices.
+• Tap Any Word to Read: Tap any word to start reading aloud directly from that word.
+• PDF Page Scrubber: Visual scrollable page chips with active reading indicator.
+• Home Audio Player: Persistent mini-player controls directly in your library.
+• Light & Dark Mode theme toggle.
 ```
-*(Character count: ~460 / 500)*
+*(Character count: 486 / 500)*
 
 ---
 
