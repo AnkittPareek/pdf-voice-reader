@@ -33,17 +33,22 @@ describe('AdService Monetization & Protection Tests', () => {
     await adService.initialize();
   });
 
-  it('should allow interstitials across user triggers when not ad-free', async () => {
+  it('should protect active speaking and enforce cooldown for interstitials', async () => {
     // When idle or stopped, interstitial is allowed
     usePlaybackStore.getState().setState('stopped');
     expect(adService.canShowInterstitial()).toBe(true);
 
-    // Interstitial is allowed on audio triggers (start, pause, resume, stop)
+    // CRITICAL: Interstitials must NEVER play while audio is actively speaking
     usePlaybackStore.getState().setState('speaking');
-    expect(adService.canShowInterstitial()).toBe(true);
+    expect(adService.canShowInterstitial()).toBe(false);
 
+    // When stopped or paused, interstitial can show if cooldown has not triggered
     usePlaybackStore.getState().setState('paused');
     expect(adService.canShowInterstitial()).toBe(true);
+
+    // After an interstitial is recorded, cooldown blocks further interstitials
+    await adService.recordInterstitialShown();
+    expect(adService.canShowInterstitial()).toBe(false);
   });
 
   it('should execute continuation callback in showInterstitialOrContinue', async () => {

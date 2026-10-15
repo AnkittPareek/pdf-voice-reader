@@ -59,9 +59,13 @@ export default function ListeningScreen() {
     const currentState = usePlaybackStore.getState().state;
     if (currentState === 'paused') {
       await speechOrchestrator.resume();
+    } else if (currentState !== 'speaking' && currentState !== 'loading') {
+      if (document) {
+        await speechOrchestrator.start(document.id, playback.pageIndex, playback.chunkIndex);
+      }
     }
     router.back();
-  }, [router]);
+  }, [router, document, playback.pageIndex, playback.chunkIndex]);
 
   const handleStopAndExit = useCallback(async () => {
     setShowExitModal(false);

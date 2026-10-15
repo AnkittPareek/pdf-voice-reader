@@ -269,9 +269,13 @@ export default function ReaderScreen() {
     const currentState = usePlaybackStore.getState().state;
     if (currentState === 'paused') {
       await speechOrchestrator.resume();
+    } else if (currentState !== 'speaking' && currentState !== 'loading') {
+      if (document) {
+        await speechOrchestrator.start(document.id, currentPageIndex, 0);
+      }
     }
     router.back();
-  }, [router]);
+  }, [router, document, currentPageIndex]);
 
   const handleStopAndExit = useCallback(async () => {
     setShowExitModal(false);
@@ -399,12 +403,9 @@ export default function ReaderScreen() {
 
   const wasPlayingBeforeVoiceModal = useRef(false);
 
-  const handleOpenVoiceModal = useCallback(async () => {
-    const isCurrentlySpeaking = usePlaybackStore.getState().state === 'speaking';
-    wasPlayingBeforeVoiceModal.current = isCurrentlySpeaking;
-    if (isCurrentlySpeaking) {
-      await speechOrchestrator.pause();
-    }
+  const handleOpenVoiceModal = useCallback(() => {
+    const currentState = usePlaybackStore.getState().state;
+    wasPlayingBeforeVoiceModal.current = currentState === 'speaking' || currentState === 'loading';
     setShowVoiceModal(true);
   }, []);
 
@@ -412,7 +413,10 @@ export default function ReaderScreen() {
     setShowVoiceModal(false);
     if (wasPlayingBeforeVoiceModal.current) {
       wasPlayingBeforeVoiceModal.current = false;
-      await speechOrchestrator.resume();
+      const currentState = usePlaybackStore.getState().state;
+      if (currentState === 'paused') {
+        await speechOrchestrator.resume();
+      }
     }
   }, []);
 
@@ -432,12 +436,23 @@ export default function ReaderScreen() {
       await useLibraryStore.getState().updateDocument(updatedDoc);
       await speechOrchestrator.setDocumentVoice(voiceId, languageCode);
 
-      if (wasPlayingBeforeVoiceModal.current) {
-        wasPlayingBeforeVoiceModal.current = false;
+      const currentState = usePlaybackStore.getState().state;
+      if (currentState === 'speaking') {
+        // Voice changed mid-speech: immediately refresh current chunk to speak with the newly selected voice
+        await speechOrchestrator.jumpToPosition(
+          currentPageIndex,
+          usePlaybackStore.getState().chunkIndex,
+          0,
+          document.id
+        );
+      } else if (currentState === 'paused') {
         await speechOrchestrator.resume();
+      } else {
+        await speechOrchestrator.start(document.id, currentPageIndex, 0);
       }
+      wasPlayingBeforeVoiceModal.current = false;
     },
-    [document]
+    [document, currentPageIndex]
   );
 
   const handleFontSizeDecrease = () => {

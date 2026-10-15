@@ -141,11 +141,15 @@ export function DocumentVoiceSetupModal({
     [stopPreviewIfActive, voices]
   );
 
-  const handleConfirm = useCallback(async () => {
-    await stopPreviewIfActive();
-    setPreviewingVoiceId(null);
-    onConfirm(selectedVoiceId, selectedLanguage);
-  }, [onConfirm, selectedVoiceId, selectedLanguage, stopPreviewIfActive]);
+  const handleConfirm = useCallback(
+    async (overrideVoiceId?: string) => {
+      await stopPreviewIfActive();
+      setPreviewingVoiceId(null);
+      const voiceToUse = overrideVoiceId !== undefined ? overrideVoiceId : selectedVoiceId;
+      onConfirm(voiceToUse, selectedLanguage);
+    },
+    [onConfirm, selectedVoiceId, selectedLanguage, stopPreviewIfActive]
+  );
 
   const handleClose = useCallback(async () => {
     await stopPreviewIfActive();
@@ -416,7 +420,7 @@ export function DocumentVoiceSetupModal({
           <View style={styles.actionFooter}>
             <TouchableOpacity
               style={[styles.confirmBtn, { backgroundColor: theme.colors.accent }]}
-              onPress={handleConfirm}
+              onPress={() => handleConfirm()}
               accessibilityRole="button"
               accessibilityLabel="Confirm narrator and start listening"
               activeOpacity={0.8}
@@ -430,7 +434,7 @@ export function DocumentVoiceSetupModal({
               style={[styles.defaultBtn, { borderColor: theme.colors.divider }]}
               onPress={() => {
                 setSelectedVoiceId('');
-                handleConfirm();
+                handleConfirm('');
               }}
               accessibilityRole="button"
               accessibilityLabel="Use default narrator"

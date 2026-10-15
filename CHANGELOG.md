@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.4] - 2026-10-15
+
+### Fixed
+- **Reader Background Playback Continuity**: Fixed bug where tapping "🎧 Hear in Background" upon exiting ReaderScreen stopped reading. Ensured audio playback state and audio focus are actively preserved during navigation back to the Library.
+- **Voice Modal Audio Non-Disruption & Auto-Resume**: Fixed bug where opening the Reader voice modal interrupted ongoing speech. Opening the modal no longer pauses active reading unless an audio preview is explicitly triggered; closing the modal seamlessly resumes reading, and confirming a voice starts or updates speech immediately.
+- **Document Voice Selection State Closure**: Fixed React state closure bug in `DocumentVoiceSetupModal` when tapping "Use Default Narrator" so that default narrator (`''`) is applied immediately without reading stale state.
+- **Ad Frequency Capping & Audio Protection**: Updated `AdService.canShowInterstitial()` to strictly protect active reading (`'speaking'`) from ad interruptions and enforce the 8-minute cooldown.
+- **Library PDF Card Layout Overflow**: Fixed visual overlap between long PDF file names and the delete trash icon by reserving proper right padding.
+
 ## [1.0.3] - 2026-10-15
 
 ### Fixed

@@ -20,6 +20,7 @@ import mobileAds, {
   RewardedAdEventType,
   TestIds,
 } from 'react-native-google-mobile-ads';
+import { usePlaybackStore } from '../state/playbackStore';
 
 const AD_FREE_UNTIL_KEY = '@pdf_voice_reader_ad_free_until';
 const LAST_INTERSTITIAL_KEY = '@pdf_voice_reader_last_interstitial';
@@ -122,10 +123,21 @@ export class AdService {
 
   /**
    * Check if an interstitial can be shown.
-   * Ads are allowed unless the user has active Ad-Free status.
+   * Interstitials are strictly blocked if:
+   * 1. User has active Ad-Free status
+   * 2. Speech is currently active ('speaking') to avoid disrupting reading
+   * 3. Cooldown interval has not elapsed since the last interstitial
    */
   canShowInterstitial(): boolean {
     if (this.isAdFreeActive()) {
+      return false;
+    }
+    const playbackState = usePlaybackStore.getState().state;
+    if (playbackState === 'speaking') {
+      return false;
+    }
+    const elapsed = Date.now() - this.lastInterstitialTimestamp;
+    if (this.lastInterstitialTimestamp > 0 && elapsed < ADMOB_CONFIG.MIN_INTERSTITIAL_COOLDOWN_MS) {
       return false;
     }
     return true;

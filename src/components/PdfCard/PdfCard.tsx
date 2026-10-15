@@ -84,7 +84,7 @@ export function PdfCard({ document, onPress, onDelete, variant = 'compact' }: Pd
             <Text style={styles.featuredCoverText}>{badgeLabel}</Text>
           </View>
 
-          <View style={styles.featuredContent}>
+          <View style={[styles.featuredContent, onDelete && { paddingRight: 40 }]}>
             <Text
               style={[
                 styles.featuredTitle,

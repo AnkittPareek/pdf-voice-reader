@@ -2,7 +2,7 @@
   "expo": {
     "name": "PDF Voice",
     "slug": "pdf-voice-reader",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -13,7 +13,7 @@
     },
     "android": {
       "package": "com.pdfvoice.app",
-      "versionCode": 4,
+      "versionCode": 5,
       "adaptiveIcon": {
         "backgroundColor": "#2F25A8",
         "foregroundImage": "./assets/android-icon-foreground.png",

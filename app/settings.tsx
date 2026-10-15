@@ -585,7 +585,7 @@ export default function SettingsScreen() {
                   { color: theme.colors.textSecondary },
                 ]}
               >
-                1.0.3 (Build 4)
+                1.0.4 (Build 5)
               </Text>
             </View>
 
